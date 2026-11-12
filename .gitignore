@@ -1,0 +1,10 @@
+# Python setup folder (each computer makes its own)
+.venv/
+__pycache__/
+
+# Databases are rebuilt by the server; reports stay private
+*.db
+reports.csv
+
+# Mac
+.DS_Store
