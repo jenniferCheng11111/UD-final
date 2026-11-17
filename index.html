@@ -8,14 +8,17 @@
   NYC Public Restroom Finder (team 11): the whole front end in one file.
   Views (hash routes): #/map  #/restroom/:id  #/report?restroom=:id  #/dashboard  #/about
   Backend: nyc-restroom-finder.py. Its address is API_BASE at the top of the script.
-  Outside resources: Leaflet 1.9.4 (unpkg) and OpenStreetMap tiles only.
-  Fonts: Fraunces / Instrument Sans are used if installed, else Georgia and the system UI font.
+  Outside resources: Leaflet 1.9.4 (unpkg) and OpenStreetMap tiles only. Links out to Google Maps for directions.
+  Fonts: headings use the Daydream pixel font (embedded below); body text uses Instrument Sans if installed, else the system UI font.
 -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
+/* Daydream pixel font (DoubleGum, demo licence: free for personal use), embedded so the page stays one file.
+   It has letters and numbers only; punctuation falls back to the monospace font. */
+@font-face{font-family:"Daydream";src:url(data:font/otf;base64,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tSF/IoIjdiSHJgonGCgZKUsqWiteLDktES3LLu8v1zBFMQ0yLTLnNCM1NjZQN0k4pzn2OzA7+jz9PfE/AkCFQZNClEKWQpj4NIv5NxWLi4v9N4uLCIuL+DWLi4sIi4uL+TeLiwiLi/w1i4uLCLv9BxWLi4v414uLCIuL99SLi4sIi4uL/NeLiwiLi/vUi4uLCA73tA74dOv5lBWLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+7SLiwiLi/dUi4uLCIuLi/e0i4sIi4vri4uLCIuLi/h0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiL/lQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA741Iv4dBWLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL+1SLi4sIi4uL/BSLiwj3tIsVi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLi/tUi4uLCIuLi/wUi4sIDve0i/h0FYuL64uLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4v7VIuLiwiLi4v8FIuLCA74dOsrFYuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA74dOsrFYuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+TT3tPjUFYuLK4uLiwiLi4v8FIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v4FIuLCIuL64uLiwiLi4v3tIuLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4v7VIuLCA76tPe0+TQVi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL+NSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sI97T7VBWLi4sri4sIi4vri4uLCIuLi/u0i4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4vri4sIi4vri4uLCA75NOv5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4v9NIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/pUi4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwgO+lTr+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4v5lIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL64uLCIuL/NSLi4sIi4uLK4uLCA76tPdU+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuL64uLiwiLi4v7VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwgO+rT3VPk0FYuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v3VIuLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/h0i4sIi4vri4uLCIuLi/h0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL/BSLiwiLi/tUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+lT3VPk0FYuLK4uLiwiLi4v8dIuLCIuL97SLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v41IuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v81IuLiwiLi4sri4sIDvpU97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+7SLi4sIi4uLK4uLCPdU/NQVi4uL+1SLiwiLi/tUi4uLCIuLi/dUi4sIi4v3VIuLiwgO+lTr+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL64uLiwiLi4v3tIuLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4v9NIuLiwiLi4sri4sIDvq091T5NBWLiyuLi4sIi4uL/BSLiwiLi+uLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLiyuLiwiLi/mUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwj4FPtUFYuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLi/dUi4uLCIv8FBWLi4sri4sIi4v7VIuLiwiLi4vri4sIi4v3VIuLiwgO+lT3VPk0FYuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/x0i4uLCIuLiyuLiwj4FPtUFYuLi/tUi4sIi4v7VIuLiwiLi4v3VIuLCIuL91SLi4sIDvpU6/mUFYuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLi/dUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4vri4sIi4v9NIuLiwiLi4sri4sI91T+VBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDhwEgPh0+TQVi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi/dUi4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/mUi4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwj3tPu0FYuLi/u0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIDhwEgPe0+TQVi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLiyuLiwiLi/mUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sI97T7VBWLi4v7VIuLCIuL+1SLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIv8FBWLi4v7VIuLCIuL+1SLi4sIi4uL91SLiwiLi/dUi4uLCA76tPgU+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLiyuLiwiLi/gUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sIDhwEgOv5NBWLiyuLi4sIi4uL/TSLiwiLi+uLi4sIi4uL/BSLiwiLi/mUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v81IuLiwiLi4sri4sI+HT7tBWLi4sri4sIi4vri4uLCIuLi/tUi4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4v3tIuLCIuL91SLi4sIDvq097T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL+TSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL/HSLi4sIi4uL64uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL+7SLi4sIi4uL64uLCIuL+BSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v81IuLiwiLi4sri4sIDvpU91T5NBWLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/TSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL+7SLi4sIi4uL64uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v81IuLiwiLi4sri4sIDhwEgPgU+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLi/tUi4sIi4v3VIuLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4v3VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4v3VIuLiwiLi4sri4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi/e0i4sIi4vri4uLCIuLi+uLiwiLi/gUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL/HSLi4sIi4uLK4uLCA4cBIDr+TQVi4sri4uLCIuLi/5Ui4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLi/e0i4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL+BSLiwiLiyuLi4sIi4uL91SLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi/tUi4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+NTr+TQVi4sri4uLCIuLi/5Ui4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL+NSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA759Pe0+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLi/u0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL+HSLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/jUi4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi/dUi4sIi4v7tIuLiwiLi4sri4sIDvq06/k0FYuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4v7VIuLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvmU97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL+HSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDhwFQPdU+TQVi4sri4uLCIuLi/wUi4sIi4sri4uLCIuLi/zUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/x0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL+BSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL+7SLi4sIi4uLK4uLCA4cBOD3VPk0FYuLK4uLiwiLi4v8FIuLCIuLK4uLiwiLi4v81IuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/h0i4sIi4vri4uLCIuLi/u0i4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLi+uLi4sIi4uL+NSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v8dIuLCIuLK4uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIDhwEgPgU+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLi/tUi4sIi4v3VIuLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4v3VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sI91T7VBWLi4sri4sIi4vri4uLCIuLi/tUi4sIi4sri4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIDvq06/k0FYuLK4uLiwiLi4v9NIuLCIuL64uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uL64uLCIuL/HSLi4sIi4uLK4uLCPgU+1QVi4uLK4uLCIuL64uLiwiLi4v7VIuLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4v3VIuLCIuL91SLi4sIDhwE4Ph0+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uLK4uLCIuL+BSLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sI97T7VBWLi4v7tIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4v3VIuLiwgOHASA97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwj4FPtUFYuLi/tUi4sIi4sri4uLCIuLiyuLiwiLi/tUi4uLCIuLi/dUi4sIi4vri4uLCIuLi+uLiwiLi/dUi4uLCA76tPe0+TQVi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v7VIuLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/jUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sIDhwEgPe0+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL+BSLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL/TSLi4sIi4uLK4uLCA4cBIDr+NQVi4sri4uLCIuLi/00i4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/k0i4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4v7VIuLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+7SLi4sIi4uL+1SLiwgOHASA6/k0FYuLK4uLiwiLi4v8FIuLCIuL64uLiwiLi4v8FIuLCIuL64uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v4FIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIDhwE4Ov5NBWLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+7SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4vri4uLCIuLi/jUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL/HSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v4dIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDhwE4PdU+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL64uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvq0+TT5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvq091T5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL+ZSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL97SLiwiLi/tUi4uLCIuLi+uLiwiLi/x0i4uLCIuLiyuLiwgOHASA+HT5NBWLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+ZSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL/BSLi4sIi4uLK4uLCPe0+7QVi4uL+7SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4v3VIuLiwgOHASA97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL+ZSLi4sIi4uL64uLCIuL91SLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwj3tPtUFYuLi/tUi4sIi4v7VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi/wUFYuLi/tUi4sIi4v7VIuLiwiLi4v3VIuLCIuL91SLi4sIDvq0+BT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/BSLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uLK4uLCIuL+BSLi4sIi4uL64uLCIuL91SLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4v3VIuLCIuL64uLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwgOHASA6/k0FYuLK4uLiwiLi4v9NIuLCIuL64uLiwiLi4v8FIuLCIuL+ZSLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/jUi4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwj4dPu0FYuLiyuLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi/e0i4sIi4v3VIuLiwgO+rT3tPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v5NIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v8dIuLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v7tIuLiwiLi4vri4sIi4v4FIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwgO+lT3VPk0FYuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v9NIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v7tIuLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwgOHASA+BT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi/dUi4uLCIuLiyuLiwiLi/h0i4uLCIuLi+uLiwiLi/dUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLi/dUi4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uL64uLCIuL+BSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sIDhwEgOv5NBWLiyuLi4sIi4uL/lSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL97SLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4v4FIuLCIuLK4uLiwiLi4v3VIuLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL+1SLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA741Ov5NBWLiyuLi4sIi4uL/lSLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvn097T5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uL+7SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+NSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL91SLiwiLi/u0i4uLCIuLiyuLiwgO+rTr+TQVi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLi/x0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLi/tUi4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+ZT3tPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgOHAVA91T5NBWLiyuLi4sIi4uL/BSLiwiLiyuLi4sIi4uL/NSLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4v4FIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIDhwE4PdU+TQVi4sri4uLCIuLi/wUi4sIi4sri4uLCIuLi/zUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLi+uLi4sIi4uL+7SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/x0i4sIi4sri4uLCIuLi/e0i4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwgOHASA+BT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi/dUi4uLCIuLiyuLiwiLi/h0i4uLCIuLi+uLiwiLi/dUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/h0i4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwj3VPtUFYuLiyuLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4v3VIuLCIuL64uLiwiLi4vri4sIi4v3VIuLiwgO+rTr+TQVi4sri4uLCIuLi/00i4sIi4vri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sI+BT7VBWLi4sri4sIi4vri4uLCIuLi/tUi4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi/dUi4sIi4v3VIuLiwgOHATg+HT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v4FIuLiwiLi4vri4sIi4v3VIuLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwj3tPtUFYuLi/u0i4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi/dUi4uLCA4cBID3tPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL/NSLi4sIi4uLK4uLCPgU+1QVi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuL+1SLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIDvq097T5NBWLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL+NSLi4sIi4uL64uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/x0i4uLCIuLiyuLiwgOHASA97T5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v8dIuLCIuL64uLiwiLi4v7VIuLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v4FIuLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v9NIuLiwiLi4sri4sIDhwEgOv41BWLiyuLi4sIi4uL/TSLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL+TSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLi/tUi4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4v7VIuLCA4cBIDr+TQVi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLi/wUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/gUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4sri4uLCIuLi/jUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwgOHATg6/k0FYuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4v7tIuLCIuL64uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4v3VIuLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLi+uLi4sIi4uL+NSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v8dIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/h0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgOHATg91T5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4vri4sIi4v3VIuLiwiLi4sri4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+rT5NPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+rT3VPk0FYuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v5lIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3tIuLCIuL+1SLi4sIi4uL64uLCIuL/HSLi4sIi4uLK4uLCA6LDp8OAAABoAAAASAAAAHgAAACQAAAASAAAAHgAAAB4AAAAqAAAAQgAAACoAAAA8AAAAQgAAAEIAAAA8AAAAPAAAADwAAABCAAAAPAAAADwAAABIAAAASAAAAEIAAABIAAAAQgAAADwAAABIAAAASAAAACQAAAA2AAAAQgAAADAAAABUAAAATgAAAEgAAABCAAAATgAAAEgAAABCAAAASAAAAEgAAABIAAAATgAAAE4AAABCAAAAQgAAAEgAAABIAAAAQgAAAEgAAABCAAAAPAAAAEgAAABIAAAAJAAAADYAAABCAAAAMAAAAFQAAABOAAAASAAAAEIAAABOAAAASAAAAEIAAABIAAAASAAAAEgAAABOAAAATgAAAEIAAABCAAAAAAAAAAFAAAAAAAAQAAAAAAAAABABAAAmVuAAAAAQAAAAoAHgAsAAFERkxUAAgABAAAAAD//wABAAAAAWxpZ2EACAAAAAEAAAABAAQABAAAAAEACAABAAgAAQAOAAEAAQAyAAEABABIAAMARwAyAAA=) format("opentype");font-weight:400 700;font-style:normal;font-display:swap}
 /* ============ SHARED TOKENS (app shell) ============ */
 :root{
-  --cream:#E8E7E0;
+  --cream:#FFFFFF;
   --cream-2:#F4F3ED;
   --ink:#1B3A22;
   --ink-soft:#4B6150;
@@ -33,7 +36,7 @@
   --shadow:0 1px 2px rgba(27,58,34,.08),0 6px 18px rgba(27,58,34,.10);
   --radius:16px;
   --font-body:"Instrument Sans",ui-rounded,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --font-display:"Fraunces",Georgia,"Times New Roman",serif;
+  --font-display:"Daydream",ui-monospace,"Courier New",monospace;
   --header-h:68px;
 }
 *{box-sizing:border-box}
@@ -657,13 +660,230 @@ a{color:inherit}
 @keyframes popin{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 #view-report .cloud{animation:drift 5s ease-in-out infinite alternate}
 #view-report #pDone .cloud.ok{animation:popin .5s cubic-bezier(.3,1.4,.5,1) both,drift 5s ease-in-out .5s infinite alternate}
+/* ============ VIEW: REPORT FORM ============ */
+#view-add{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+#view-add .wrap{max-width:760px;margin:0 auto;padding:16px 22px 110px}
+#view-add .back{display:inline-flex;align-items:center;gap:7px;margin:0 0 12px -6px;padding:7px 12px 7px 9px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14.5px;color:var(--ink-soft)}
+#view-add .back:hover{background:var(--peri-soft);color:var(--ink)}
+#view-add .rhero{
+  border-radius:22px;padding:20px 24px 18px;margin-bottom:18px;border:1.5px solid var(--line);
+  background-color:var(--peri);
+  background-image:linear-gradient(to right,rgba(232,231,224,.96) 3px,transparent 3px),linear-gradient(to bottom,rgba(232,231,224,.96) 3px,transparent 3px);
+  background-size:46px 46px;
+}
+#view-add h1{margin:0 0 10px;font-family:var(--font-display);font-weight:700;font-size:clamp(26px,4.4vw,36px);line-height:1.3;letter-spacing:.06em}
+#view-add h1 span{background:var(--cream);padding:.05em .3em;border-radius:7px;-webkit-box-decoration-break:clone;box-decoration-break:clone;box-shadow:0 2px 0 rgba(27,58,34,.18)}
+#view-add .sub{display:inline-block;margin:0;font-size:15.5px;background:rgba(232,231,224,.94);padding:5px 11px;border-radius:9px;line-height:1.45}
+
+#view-add .card{background:var(--cream-2);border:1.5px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;min-width:0}
+#view-add fieldset{border:0;margin:0;padding:0;min-width:0}
+#view-add legend,#view-add .lbl{display:block;padding:0;margin:0 0 4px;font-family:var(--font-display);font-weight:700;font-size:20px}
+#view-add .step{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--cream-2);font-family:var(--font-body);font-size:14px;margin-right:9px;vertical-align:2px}
+#view-add .help{margin:0 0 12px;font-size:14.5px;color:var(--ink-soft);line-height:1.45}
+#view-add .opt{font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:6px}
+#view-add .err{display:flex;align-items:center;gap:7px;margin:10px 0 0;font-size:14.5px;font-weight:600;color:#7C2F1E}
+#view-add .err[hidden]{display:none}
+#view-add .invalid{border-color:var(--clay)!important}
+
+/* restroom combobox */
+#view-add .combo{position:relative}
+#view-add .field{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--ink-soft);border-radius:12px;padding:0 12px}
+#view-add .field:focus-within{outline:3px solid var(--teal-deep);outline-offset:2px}
+#view-add .field input{flex:1;min-width:0;border:0;background:transparent;padding:13px 0;font-size:16px;outline:none}
+#view-add .field input::placeholder{color:#566B5B}
+#view-add #rlist{
+  position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:20;margin:0;padding:6px;list-style:none;background:#fff;
+  border:1.5px solid var(--ink-soft);border-radius:12px;box-shadow:var(--shadow);max-height:300px;overflow:auto;
+}
+#view-add #rlist li{padding:9px 11px;border-radius:8px;cursor:pointer;display:grid;gap:1px}
+#view-add #rlist li b{font-size:15.5px}
+#view-add #rlist li span{font-size:13px;color:var(--ink-soft)}
+#view-add #rlist li[aria-selected="true"],#view-add #rlist li:hover{background:var(--peri-soft)}
+#view-add #rlist li.none{cursor:default;color:var(--ink-soft);font-size:14.5px}
+#view-add #rlist li.none:hover{background:transparent}
+#view-add .picked{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:var(--cream);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+#view-add .picked h3{margin:0 0 3px;font-size:17px}
+#view-add .picked p{margin:0;font-size:14px;color:var(--ink-soft)}
+#view-add .picked .badge{margin-bottom:6px}
+
+/* category cards */
+#view-add .cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#view-add .cat{position:relative}
+#view-add .cat input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+#view-add .cat label{
+  display:grid;grid-template-columns:auto 1fr;gap:3px 11px;align-items:start;height:100%;padding:13px 14px;border-radius:14px;
+  border:1.5px solid var(--ink-soft);background:var(--cream);cursor:pointer;transition:background .12s,border-color .12s;
+}
+#view-add .cat .ic{width:22px;height:22px;margin-top:1px;color:var(--teal-deep)}
+#view-add .cat b{font-size:16px;line-height:1.25}
+#view-add .cat span.h{grid-column:2;font-size:13.5px;color:var(--ink-soft);line-height:1.4}
+#view-add .cat span.fx{grid-column:2;font-size:12.5px;font-weight:700;color:#5C4508;background:#F6E7B5;justify-self:start;padding:2px 8px;border-radius:999px;margin-top:3px}
+#view-add .cat:hover label{background:var(--peri-soft)}
+#view-add .cat input:checked + label{background:var(--green);border-color:var(--green);color:#fff}
+#view-add .cat input:checked + label .ic,#view-add .cat input:checked + label span.h{color:#fff}
+#view-add .cat input:checked + label span.fx{background:#F6E7B5;color:#5C4508}
+#view-add .cat input:checked + label b::after{content:" ✓"}
+#view-add .cat input:focus-visible + label{outline:3px solid var(--teal-deep);outline-offset:2px}
+#view-add .cats.invalid .cat label{border-color:var(--clay)}
+
+/* optional bits */
+#view-add textarea{width:100%;min-height:96px;resize:vertical;border:1.5px solid var(--ink-soft);border-radius:12px;padding:12px;font-family:var(--font-body);font-size:16px;line-height:1.45;background:#fff}
+#view-add textarea:focus-visible{outline:3px solid var(--teal-deep);outline-offset:2px}
+#view-add .count{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:13px;color:var(--ink-soft)}
+#view-add .count.over{color:#7C2F1E;font-weight:700}
+#view-add .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+#view-add .chips .lbl2{width:100%;font-weight:600;font-size:15px;margin-bottom:-2px}
+#view-add .pill{position:relative}
+#view-add .pill input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+#view-add .pill label{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--ink-soft);font-weight:600;font-size:14.5px;cursor:pointer;background:transparent}
+#view-add .pill:hover label{background:var(--peri-soft)}
+#view-add .pill input:checked + label{background:var(--green);border-color:var(--green);color:#fff}
+#view-add .pill input:checked + label::after{content:"✓"}
+#view-add .pill input:focus-visible + label{outline:3px solid var(--teal-deep);outline-offset:2px}
+
+/* buttons + banners */
+#view-add .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;background:var(--green);color:#fff;font-weight:700;font-size:16px;padding:13px 22px;border-radius:999px;cursor:pointer;text-decoration:none;box-shadow:0 2px 0 var(--green-deep);transition:transform .12s ease,box-shadow .12s ease}
+#view-add .btn:hover{transform:translateY(-1px);box-shadow:0 3px 0 var(--green-deep)}
+#view-add .btn:active{transform:translateY(1px);box-shadow:0 1px 0 var(--green-deep)}
+#view-add .btn.ghost{background:var(--cream-2);color:var(--ink);border:1.5px solid var(--ink-soft);box-shadow:none}
+#view-add .btn.ghost:hover{background:var(--peri-soft)}
+#view-add .btn.sm{padding:8px 14px;font-size:14px}
+#view-add .btn[disabled]{opacity:.65;cursor:progress;transform:none}
+#view-add .submit{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#view-add .fine{margin:12px 0 0;font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+#view-add .banner{display:flex;gap:10px;align-items:flex-start;border-radius:14px;padding:14px 16px;margin-bottom:16px;font-size:15px;line-height:1.45}
+#view-add .banner .ic{margin-top:2px;width:20px;height:20px}
+#view-add .banner.bad{background:#F0D5CC;color:#7C2F1E;border:1.5px solid #D9A898}
+#view-add .banner.warn{background:#F6E7B5;color:#5C4508;border:1.5px solid #E3CB78}
+#view-add .banner ul{margin:6px 0 0;padding-left:18px}
+#view-add .banner a{color:inherit;font-weight:700}
+#view-add .emerg{display:flex;gap:9px;align-items:flex-start;font-size:14px;background:var(--highlight);border-radius:12px;padding:10px 13px;margin-top:12px}
+#view-add .emerg[hidden]{display:none}
+
+/* success + state panels */
+#view-add .state{text-align:center;padding:44px 18px;display:grid;gap:12px;justify-items:center;background:var(--cream-2);border:1.5px solid var(--line);border-radius:22px;margin-bottom:16px}
+#view-add .state h2{margin:0;font-family:var(--font-display);font-size:26px}
+#view-add .state p{margin:0;color:var(--ink-soft);max-width:40ch;line-height:1.5}
+#view-add .cloud{width:150px;height:70px;border-radius:999px;background-color:var(--peri);background-image:radial-gradient(rgba(232,231,224,.9) 1.6px,transparent 1.8px);background-size:9px 9px}
+#view-add .cloud.err{background-color:#E9C9BD}
+#view-add .cloud.ok{background-color:#B9DCC1}
+#view-add .change{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:6px 0 2px}
+#view-add .change .arrow{font-size:20px}
+#view-add .badge{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 9px;border-radius:999px;font-weight:700;font-size:14.5px}
+#view-add .s-open{background:#CFE5D3;color:#17481F}
+#view-add .s-closed{background:#DDE1E5;color:#364350}
+#view-add .s-down{background:#F0D5CC;color:#7C2F1E}
+#view-add .s-reported{background:#F6E7B5;color:#5C4508}
+#view-add .s-unknown{background:var(--peri-soft);color:#1F4D63}
+#view-add .recap{text-align:left;background:var(--cream);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;width:100%;max-width:520px}
+#view-add .recap dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px}
+#view-add .recap dt{color:var(--ink-soft);font-weight:600}
+#view-add .recap dd{margin:0}
+#view-add .row-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
+#view-add .skel{border-radius:var(--radius);border:1.5px solid var(--line);background:linear-gradient(100deg,var(--cream-2) 30%,#fff 50%,var(--cream-2) 70%);background-size:300% 100%;animation:shimmer 1.4s linear infinite}
+@keyframes shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
+#view-add [hidden]{display:none!important}
+@media (max-width:860px){
+  /* phone tap targets: 44px minimum */
+  #view-add .back{display:inline-flex;min-height:44px}
+  #view-add .btn,#view-add .btn.sm{min-height:44px}
+  #view-add .pill label{min-height:44px}
+  #view-add .field input{min-height:44px;padding-top:0;padding-bottom:0}
+  #view-add .wrap{padding:12px 14px 130px}
+  #view-add .rhero{padding:16px;border-radius:18px;background-size:38px 38px}
+  #view-add .card{padding:16px}
+  #view-add .cats{grid-template-columns:1fr}
+  #view-add .submit .btn{width:100%}
+}
+@media (prefers-reduced-motion:reduce){#view-add{scroll-behavior:auto}#view-add .skel{animation:none}}
+
+/* whimsy: hand-drawn underline, drifting clouds, a little pop on the thank-you */
+#view-add h1 span{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'><path d='M2 5C15 1 25 7 40 4S70 2 85 5 105 6 118 3' fill='none' stroke='%23236B35' stroke-width='2.2' stroke-linecap='round' vector-effect='non-scaling-stroke'/></svg>");background-repeat:no-repeat;background-position:0 100%;background-size:100% 8px;padding:10px 2px 2px}
+@keyframes drift{from{transform:translateX(-7px)}to{transform:translateX(7px)}}
+#view-add .cloud{animation:drift 5s ease-in-out infinite alternate}
+
+#view-add .badge{display:inline-flex;align-items:center;gap:7px;padding:6px 13px 6px 10px;border-radius:999px;font-weight:700;font-size:15px}
+#view-add .s-open{background:#CFE5D3;color:#17481F}
+#view-add .s-closed{background:#DDE1E5;color:#364350}
+#view-add .s-down{background:#F0D5CC;color:#7C2F1E}
+#view-add .s-reported{background:#F6E7B5;color:#5C4508}
+#view-add .s-unknown{background:var(--peri-soft);color:#1F4D63}
+#view-add .pin.s-open{--c:var(--green)}
+#view-add .pin.s-closed{--c:var(--slate)}
+#view-add .pin.s-down{--c:var(--clay)}
+#view-add .pin.s-reported{--c:var(--gold);--g:#3B2E00}
+#view-add .pin.s-unknown{--c:var(--teal-deep)}
+#view-add .pin{background:none!important;color:inherit!important;width:32px;height:40px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));animation:drop .4s cubic-bezier(.3,1.5,.5,1) .15s backwards}
+#view-add .pin svg{display:block;width:100%;height:100%;overflow:visible}
+#view-add .pin .door{fill:var(--c);stroke:var(--cream-2);stroke-width:2.5;stroke-linejoin:round}
+#view-add .pin .g{fill:none;stroke:var(--g,#fff);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+#view-add .pin .gf{fill:var(--g,#fff);stroke:none}
+#view-add .pin .dark{fill:rgba(0,0,0,.4);stroke:none}
+@keyframes drop{from{opacity:0;transform:translateY(-18px) scale(.7)}to{opacity:1;transform:none}}
+
+#view-add{min-height:0;overflow-y:auto;background:var(--cream)}
+#view-add .wrap{max-width:720px;margin:0 auto;padding:18px 20px 60px}
+#view-add #addMap{height:300px;border-radius:12px;background:#DCE6F1;border:1.5px solid var(--line);overflow:hidden;z-index:0;margin:10px 0 8px}
+#view-add .maprow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#view-add .coord{font-size:14px;color:var(--ink-soft)}
+#view-add select{width:100%;border:1.5px solid var(--ink-soft);border-radius:12px;padding:13px 12px;font-size:16px;background:#fff;font-family:var(--font-body);min-height:48px;cursor:pointer}
+#view-add .field input{flex:1}
+#view-add .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#view-add .lbl{display:block;font-weight:600;margin:14px 0 6px}
+#view-add .dupes{margin-top:12px;background:var(--highlight);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px}
+#view-add .dupes p{margin:0 0 6px;font-weight:600}
+#view-add .dupes ul{margin:0 0 8px;padding-left:18px}
+#view-add .dupes label{display:flex;gap:8px;align-items:center;font-weight:600;min-height:44px;cursor:pointer}
+#view-add .dupes input{width:20px;height:20px;accent-color:var(--green-deep)}
+#view-add .preview{text-align:left;background:var(--cream);border:1.5px dashed var(--ink-soft);border-radius:14px;padding:14px 16px;width:100%;max-width:520px}
+#view-add .preview .tag{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:none;margin:0 0 8px}
+#view-add .preview h3{margin:6px 0 2px;font-size:18px}
+#view-add .preview .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+#view-add .done-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+@media (max-width:640px){#view-add .two{grid-template-columns:1fr}#view-add #addMap{height:260px}}
+
+
+/* ============ THEME: white page, Daydream pixel font for headings ============ */
+/* Daydream by DoubleGum (DEMO, personal-use licence). Embedded so the page needs no outside font. */
+@font-face{font-family:"Daydream";src:url("data:font/otf;base64,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tSF/IoIjdiSHJgonGCgZKUsqWiteLDktES3LLu8v1zBFMQ0yLTLnNCM1NjZQN0k4pzn2OzA7+jz9PfE/AkCFQZNClEKWQpj4NIv5NxWLi4v9N4uLCIuL+DWLi4sIi4uL+TeLiwiLi/w1i4uLCLv9BxWLi4v414uLCIuL99SLi4sIi4uL/NeLiwiLi/vUi4uLCA73tA74dOv5lBWLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+7SLiwiLi/dUi4uLCIuLi/e0i4sIi4vri4uLCIuLi/h0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiL/lQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA741Iv4dBWLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL+1SLi4sIi4uL/BSLiwj3tIsVi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLi/tUi4uLCIuLi/wUi4sIDve0i/h0FYuL64uLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4v7VIuLiwiLi4v8FIuLCA74dOsrFYuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA74dOsrFYuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+TT3tPjUFYuLK4uLiwiLi4v8FIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v4FIuLCIuL64uLiwiLi4v3tIuLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4v7VIuLCA76tPe0+TQVi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL+NSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sI97T7VBWLi4sri4sIi4vri4uLCIuLi/u0i4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4vri4sIi4vri4uLCA75NOv5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4v9NIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/pUi4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwgO+lTr+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4v5lIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL64uLCIuL/NSLi4sIi4uLK4uLCA76tPdU+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuL64uLiwiLi4v7VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwgO+rT3VPk0FYuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v3VIuLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/h0i4sIi4vri4uLCIuLi/h0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL/BSLiwiLi/tUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+lT3VPk0FYuLK4uLiwiLi4v8dIuLCIuL97SLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v41IuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v81IuLiwiLi4sri4sIDvpU97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+7SLi4sIi4uLK4uLCPdU/NQVi4uL+1SLiwiLi/tUi4uLCIuLi/dUi4sIi4v3VIuLiwgO+lTr+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL64uLiwiLi4v3tIuLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4v9NIuLiwiLi4sri4sIDvq091T5NBWLiyuLi4sIi4uL/BSLiwiLi+uLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLiyuLiwiLi/mUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwj4FPtUFYuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLi/dUi4uLCIv8FBWLi4sri4sIi4v7VIuLiwiLi4vri4sIi4v3VIuLiwgO+lT3VPk0FYuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/x0i4uLCIuLiyuLiwj4FPtUFYuLi/tUi4sIi4v7VIuLiwiLi4v3VIuLCIuL91SLi4sIDvpU6/mUFYuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLi/dUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4vri4sIi4v9NIuLiwiLi4sri4sI91T+VBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDhwEgPh0+TQVi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi/dUi4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/mUi4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwj3tPu0FYuLi/u0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIDhwEgPe0+TQVi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLiyuLiwiLi/mUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sI97T7VBWLi4v7VIuLCIuL+1SLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIv8FBWLi4v7VIuLCIuL+1SLi4sIi4uL91SLiwiLi/dUi4uLCA76tPgU+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLiyuLiwiLi/gUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sIDhwEgOv5NBWLiyuLi4sIi4uL/TSLiwiLi+uLi4sIi4uL/BSLiwiLi/mUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v81IuLiwiLi4sri4sI+HT7tBWLi4sri4sIi4vri4uLCIuLi/tUi4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4v3tIuLCIuL91SLi4sIDvq097T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL+TSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL/HSLi4sIi4uL64uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL+7SLi4sIi4uL64uLCIuL+BSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v81IuLiwiLi4sri4sIDvpU91T5NBWLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/TSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL+7SLi4sIi4uL64uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v81IuLiwiLi4sri4sIDhwEgPgU+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLi/tUi4sIi4v3VIuLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4v3VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4v3VIuLiwiLi4sri4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi/e0i4sIi4vri4uLCIuLi+uLiwiLi/gUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL/HSLi4sIi4uLK4uLCA4cBIDr+TQVi4sri4uLCIuLi/5Ui4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLi/e0i4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL+BSLiwiLiyuLi4sIi4uL91SLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi/tUi4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+NTr+TQVi4sri4uLCIuLi/5Ui4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL+NSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA759Pe0+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLi/u0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL+HSLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/jUi4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi/dUi4sIi4v7tIuLiwiLi4sri4sIDvq06/k0FYuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4v7VIuLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvmU97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL+HSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDhwFQPdU+TQVi4sri4uLCIuLi/wUi4sIi4sri4uLCIuLi/zUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/x0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL+BSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL+7SLi4sIi4uLK4uLCA4cBOD3VPk0FYuLK4uLiwiLi4v8FIuLCIuLK4uLiwiLi4v81IuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/h0i4sIi4vri4uLCIuLi/u0i4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL+BSLiwiLi+uLi4sIi4uL+NSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v8dIuLCIuLK4uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIDhwEgPgU+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLi/tUi4sIi4v3VIuLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4v3VIuLiwiLi4v3VIuLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sI91T7VBWLi4sri4sIi4vri4uLCIuLi/tUi4sIi4sri4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIDvq06/k0FYuLK4uLiwiLi4v9NIuLCIuL64uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uL64uLCIuL/HSLi4sIi4uLK4uLCPgU+1QVi4uLK4uLCIuL64uLiwiLi4v7VIuLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4v3VIuLCIuL91SLi4sIDhwE4Ph0+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uLK4uLCIuL+BSLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v8FIuLiwiLi4sri4sI97T7VBWLi4v7tIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4v3VIuLiwgOHASA97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwj4FPtUFYuLi/tUi4sIi4sri4uLCIuLiyuLiwiLi/tUi4uLCIuLi/dUi4sIi4vri4uLCIuLi+uLiwiLi/dUi4uLCA76tPe0+TQVi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v7VIuLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/jUi4uLCIuLi+uLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sIDhwEgPe0+TQVi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL+BSLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL/TSLi4sIi4uLK4uLCA4cBIDr+NQVi4sri4uLCIuLi/00i4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/k0i4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL+HSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4v7VIuLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+7SLi4sIi4uL+1SLiwgOHASA6/k0FYuLK4uLiwiLi4v8FIuLCIuL64uLiwiLi4v8FIuLCIuL64uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v4FIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIDhwE4Ov5NBWLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+7SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4vri4uLCIuLi/jUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL/HSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v4dIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDhwE4PdU+TQVi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL64uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvq0+TT5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvq091T5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL+ZSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL97SLiwiLi/tUi4uLCIuLi+uLiwiLi/x0i4uLCIuLiyuLiwgOHASA+HT5NBWLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+ZSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL/BSLi4sIi4uLK4uLCPe0+7QVi4uL+7SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4v3VIuLiwgOHASA97T5NBWLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL+ZSLi4sIi4uL64uLCIuL91SLi4sIi4uL+BSLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwj3tPtUFYuLi/tUi4sIi4v7VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi/wUFYuLi/tUi4sIi4v7VIuLiwiLi4v3VIuLCIuL91SLi4sIDvq0+BT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/BSLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uLK4uLCIuL+BSLi4sIi4uL64uLCIuL91SLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4v3VIuLCIuL64uLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwgOHASA6/k0FYuLK4uLiwiLi4v9NIuLCIuL64uLiwiLi4v8FIuLCIuL+ZSLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/jUi4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwj4dPu0FYuLiyuLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi/e0i4sIi4v3VIuLiwgO+rT3tPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v5NIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v8dIuLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v7tIuLiwiLi4vri4sIi4v4FIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwgO+lT3VPk0FYuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v9NIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/e0i4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4v7tIuLiwiLi4vri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/zUi4uLCIuLiyuLiwgOHASA+BT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi/dUi4uLCIuLiyuLiwiLi/h0i4uLCIuLi+uLiwiLi/dUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLi/dUi4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL97SLiwiLi+uLi4sIi4uL64uLCIuL+BSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sIDhwEgOv5NBWLiyuLi4sIi4uL/lSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuL97SLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4v4FIuLCIuLK4uLiwiLi4v3VIuLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL+1SLi4sIi4uL97SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCA741Ov5NBWLiyuLi4sIi4uL/lSLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIDvn097T5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uL+7SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL+NSLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL91SLiwiLi/u0i4uLCIuLiyuLiwgO+rTr+TQVi4sri4uLCIuLi/x0i4sIi4vri4uLCIuLi/x0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLi/tUi4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+ZT3tPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v4dIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/e0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgOHAVA91T5NBWLiyuLi4sIi4uL/BSLiwiLiyuLi4sIi4uL/NSLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL/HSLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4v4FIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4sri4sIDhwE4PdU+TQVi4sri4uLCIuLi/wUi4sIi4sri4uLCIuLi/zUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL+HSLiwiLi+uLi4sIi4uL+7SLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v4FIuLCIuL64uLiwiLi4v41IuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/x0i4sIi4sri4uLCIuLi/e0i4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwgOHASA+BT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL/HSLiwiLi+uLi4sIi4uL+1SLiwiLi/dUi4uLCIuLiyuLiwiLi/h0i4uLCIuLi+uLiwiLi/dUi4uLCIuLi/dUi4sIi4vri4uLCIuLi/h0i4sIi4sri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwj3VPtUFYuLiyuLiwiLi+uLi4sIi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuL+1SLi4sIi4uL64uLCIuLK4uLiwiLi4v3VIuLCIuL64uLiwiLi4vri4sIi4v3VIuLiwgO+rTr+TQVi4sri4uLCIuLi/00i4sIi4vri4uLCIuLi/u0i4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLi/e0i4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4vri4sIi4v8dIuLiwiLi4sri4sI+BT7VBWLi4sri4sIi4vri4uLCIuLi/tUi4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi/dUi4sIi4v3VIuLiwgOHATg+HT5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4v4FIuLiwiLi4vri4sIi4v3VIuLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/wUi4uLCIuLiyuLiwj3tPtUFYuLi/u0i4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi/dUi4uLCA4cBID3tPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7tIuLCIuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4v3tIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4vri4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL/NSLi4sIi4uLK4uLCPgU+1QVi4uL+1SLiwiLiyuLi4sIi4uLK4uLCIuL+1SLi4sIi4uL91SLiwiLi+uLi4sIi4uL64uLCIuL91SLi4sIDvq097T5NBWLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLiyuLiwiLi/tUi4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL+NSLi4sIi4uL64uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLi+uLiwiLiyuLi4sIi4uL64uLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/x0i4uLCIuLiyuLiwgOHASA97T5NBWLi/tUi4uLCIuLiyuLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v8dIuLCIuL64uLiwiLi4v7VIuLCIuL97SLi4sIi4uL64uLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4v4FIuLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v9NIuLiwiLi4sri4sIDhwEgOv41BWLiyuLi4sIi4uL/TSLiwiLi+uLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL+TSLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v4dIuLCIuLK4uLiwiLi4v3VIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/u0i4sIi4vri4uLCIuLi/tUi4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4v3tIuLCIuL64uLiwiLi4v3tIuLCIuLK4uLiwiLi4vri4sIi4v7tIuLiwiLi4v7VIuLCA4cBIDr+TQVi4sri4uLCIuLi/wUi4sIi4vri4uLCIuLi/wUi4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/gUi4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v4FIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/tUi4sIi4sri4uLCIuLi/u0i4sIi4sri4uLCIuLi/jUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwgOHATg6/k0FYuLK4uLiwiLi4v8dIuLCIuL64uLiwiLi4v7tIuLCIuL64uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4v3VIuLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLi+uLi4sIi4uL+NSLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4v8dIuLCIuLK4uLiwiLi4vri4sIi4v7VIuLiwiLi4sri4sIi4sri4uLCIuLi/h0i4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgOHATg91T5NBWLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLiyuLi4sIi4uL+7SLiwiLi+uLi4sIi4uLK4uLCIuL91SLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4vri4sIi4v3VIuLiwiLi4sri4sIi4vri4uLCIuLi/tUi4sIi4vri4uLCIuLiyuLiwiLi/dUi4uLCIuLi+uLiwiLi+uLi4sIi4uL97SLiwiLiyuLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuLK4uLiwiLi4vri4sIi4vri4uLCIuLi+uLiwiLi+uLi4sIi4uL91SLiwiLiyuLi4sIi4uL64uLCIuL+1SLi4sIi4uLK4uLCIuLK4uLiwiLi4sri4sIi4v7VIuLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+rT5NPk0FYuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4vri4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLiyuLiwiLiyuLi4sIi4uL+1SLiwiLi+uLi4sIi4uLK4uLCIuL64uLiwiLi4sri4sIi4vri4uLCIuLiyuLiwiLi+uLi4sIi4uLK4uLCIuLK4uLiwiLi4v7tIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/dUi4sIi4vri4uLCIuLi/gUi4sIi4sri4uLCIuLi+uLiwiLi/tUi4uLCIuLiyuLiwgO+rT3VPk0FYuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v3VIuLiwiLi4sri4sIi4sri4uLCIuLiyuLiwiLiyuLi4sIi4uLK4uLCIuLK4uLiwiLi4v7VIuLCIuLK4uLiwiLi4v7VIuLCIuL64uLiwiLi4sri4sIi4v5lIuLiwiLi4vri4sIi4vri4uLCIuLi/dUi4sIi4sri4uLCIuLi+uLiwiLi/u0i4uLCIuLi+uLiwiLi+uLi4sIi4uL64uLCIuL64uLiwiLi4v3VIuLCIuL64uLiwiLi4v3tIuLCIuL+1SLi4sIi4uL64uLCIuL/HSLi4sIi4uLK4uLCA6LDp8OAAABoAAAASAAAAHgAAACQAAAASAAAAHgAAAB4AAAAqAAAAQgAAACoAAAA8AAAAQgAAAEIAAAA8AAAAPAAAADwAAABCAAAAPAAAADwAAABIAAAASAAAAEIAAABIAAAAQgAAADwAAABIAAAASAAAACQAAAA2AAAAQgAAADAAAABUAAAATgAAAEgAAABCAAAATgAAAEgAAABCAAAASAAAAEgAAABIAAAATgAAAE4AAABCAAAAQgAAAEgAAABIAAAAQgAAAEgAAABCAAAAPAAAAEgAAABIAAAAJAAAADYAAABCAAAAMAAAAFQAAABOAAAASAAAAEIAAABOAAAASAAAAEIAAABIAAAASAAAAEgAAABOAAAATgAAAEIAAABCAAAAAAAAAAFAAAAAAAAQAAAAAAAAABABAAAmVuAAAAAQAAAAoAHgAsAAFERkxUAAgABAAAAAD//wABAAAAAWxpZ2EACAAAAAEAAAABAAQABAAAAAEACAABAAgAAQAOAAEAAQAyAAEABABIAAMARwAyAAA=") format("opentype");font-weight:400 700;font-style:normal;font-display:swap}
+:root{
+  --cream:#FFFFFF;
+  --font-display:"Daydream",ui-monospace,"Courier New",monospace;
+}
+body{background:#FFFFFF}
+/* the pixel font is wide: open up the spacing and size it down a touch */
+#view-map h1,#view-detail h1,#view-report h1,#view-add h1,#view-dash h1,#view-about h1{letter-spacing:.05em!important;font-weight:400!important;line-height:1.45!important}
+#view-map h2,#view-map .state h3,#view-detail .card h2,#view-detail .state h2,#view-report legend,#view-report .state h2,
+#view-add legend,#view-add .state h2,#view-dash h2.sec,#view-about .card h2{letter-spacing:.04em!important;font-weight:400!important}
+#view-map h1{font-size:17px!important;letter-spacing:.03em!important}
+#view-map h2{font-size:16px!important}
+#view-add h1 span{padding:.12em .3em .22em!important}
+#view-add .lbl{font-family:var(--font-body)!important;font-size:15px!important;letter-spacing:0!important}
+#view-detail .card h2{font-size:18px!important}
+#view-report legend,#view-add legend{font-size:18px!important}
+#view-dash .tile-value{font-family:var(--font-body)!important;font-weight:700}
+#view-dash .tiles{grid-template-columns:repeat(auto-fit,minmax(148px,1fr))!important}
+
+/* ============ MAP: add-a-restroom hint, community cards ============ */
+#view-map .add-hint{display:flex;align-items:center;gap:8px;margin:0;padding:10px 16px;border-top:1.5px solid var(--line);background:#fff;font-size:14px;color:var(--ink-soft)}
+#view-map .add-hint a{color:var(--teal-deep);font-weight:700}
+#view-map .card.is-community{border-style:dashed}
+@media (max-width:860px){#view-map h1{font-size:16px!important}#view-map .add-hint{padding:8px 14px}}
+.leaflet-popup-content p a+a{margin-left:2px}
+
+/* ============ DETAIL: community-added restroom box ============ */
+#view-detail .cbox{background:var(--highlight)}
+#view-detail .cbox .votes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+#view-detail .cbox .votes .count{font-size:13.5px;color:#4E3F08;margin-right:4px}
+#view-detail .meter{height:8px;border-radius:999px;background:rgba(27,58,34,.12);overflow:hidden;margin-top:10px;max-width:260px}
+#view-detail .meter i{display:block;height:100%;background:var(--green);border-radius:999px}
 
 /* ============ ROUTER: one view at a time ============ */
 #views{min-height:0;min-width:0;display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr)}
 #views>.view{grid-area:1/1;min-height:0;min-width:0}
 #views>.view[hidden]{display:none!important}
 .shell-nav a,.shell-tabs a{cursor:pointer}
-.shell-tabs{grid-template-columns:repeat(3,1fr)}
+.shell-tabs{grid-template-columns:repeat(4,1fr)!important}
 
 /* ============ VIEW: DASHBOARD ============ */
 #view-dash{overflow-y:auto;overflow-x:hidden}
@@ -718,6 +938,9 @@ a{color:inherit}
 #view-dash .link{color:var(--teal-deep);font-weight:600;text-underline-offset:3px}
 #view-dash .empty{margin:0;padding:6px 0;color:var(--ink-soft)}
 #view-dash .skel{height:110px;border-radius:var(--radius);border:1.5px solid var(--line);background:linear-gradient(100deg,var(--cream-2) 30%,#fff 50%,var(--cream-2) 70%);background-size:300% 100%;animation:shimmer 1.4s linear infinite}
+#view-dash .recent-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#view-dash .recent-head .btn{text-decoration:none}
+#view-dash .note-cell{max-width:320px;overflow-wrap:anywhere;color:var(--ink-soft)}
 #dashTip{position:fixed;z-index:4500;pointer-events:none;max-width:260px;background:var(--ink);color:var(--cream-2);border-radius:10px;padding:7px 10px;font-size:13px;line-height:1.35;box-shadow:var(--shadow)}
 #dashTip strong{display:block}
 @media (max-width:860px){
@@ -748,6 +971,19 @@ a{color:inherit}
 #view-about a{color:var(--teal-deep);font-weight:600}
 @media (max-width:860px){#view-about .wrap{padding:12px 14px 120px}}
 
+/* ============ Map card: Google Maps + Details row ============ */
+#view-map .card-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:2px}
+#view-map .card-actions .card-link{justify-self:auto}
+#view-map .card-maps{
+  position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;
+  font-weight:700;font-size:13.5px;text-decoration:none;color:var(--green);
+  border:1.5px solid var(--green);border-radius:999px;padding:6px 12px;background:#fff;
+}
+#view-map .card-maps:hover{background:var(--green);color:#fff}
+#view-map .card-maps:focus-visible{outline:3px solid var(--teal-deep);outline-offset:2px}
+@media (max-width:860px){#view-map .card-maps{min-height:44px;padding:0 14px}}
+
+
 </style>
 </head>
 <body>
@@ -773,6 +1009,8 @@ a{color:inherit}
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M15 9V6.5A2.5 2.5 0 0 0 12.5 4h-6A2.5 2.5 0 0 0 4 6.5v6A2.5 2.5 0 0 0 6.5 15H9"/></symbol>
   <symbol id="i-nav" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-7.5 16-2-6.5z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-gmap" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 1 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/><path d="M16.5 3.5h4v4M20.5 3.5l-4.5 4.5"/></symbol>
 </svg>
 <a class="skip" href="#views">Skip to content</a>
 
@@ -783,6 +1021,7 @@ a{color:inherit}
   </a>
   <nav class="shell-nav" aria-label="Main">
     <a href="#/map" data-nav="map"><svg class="ic"><use href="#i-pin"/></svg>Find a restroom</a>
+    <a href="#/add" data-nav="add"><svg class="ic"><use href="#i-plus"/></svg>Add a restroom</a>
     <a href="#/dashboard" data-nav="dashboard"><svg class="ic"><use href="#i-chart"/></svg>Dashboard</a>
     <a href="#/about" data-nav="about"><svg class="ic"><use href="#i-info"/></svg>About the data</a>
   </nav>
@@ -796,7 +1035,7 @@ a{color:inherit}
   <div class="finder" data-mobile="list">
     <div class="top">
       <section class="hero" aria-labelledby="h1">
-        <h1 id="h1"><span>Find a restroom that’s actually open.</span></h1>
+        <h1 id="h1"><span>Find a restroom that's actually open.</span></h1>
         <form class="search" role="search" id="searchForm" autocomplete="off">
           <label>
             <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
@@ -848,6 +1087,7 @@ a{color:inherit}
         </label>
       </div>
       <ul class="cards" id="results" data-state="loading" aria-busy="true"></ul>
+      <p class="add-hint"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>Know one that’s missing? <a href="#/add">Add a restroom</a></span></p>
     </section>
 
     <div class="mapwrap" id="mapwrap" data-ui="loading">
@@ -883,7 +1123,7 @@ a{color:inherit}
 
     <div id="pError" class="state" hidden>
       <div class="cloud err" aria-hidden="true"></div>
-      <h2>We couldn’t reach the server</h2>
+      <h2>We couldn't reach the server</h2>
       <p>We need the restroom list so you can pick one. Give it a moment, then try again.</p>
       <div class="row-actions"><button class="btn" type="button" data-act="retry-report">Try again</button></div>
       <p class="fine" id="errMsg"></p>
@@ -909,7 +1149,7 @@ a{color:inherit}
 
       <section class="card" id="cardCat">
         <fieldset aria-describedby="cErr">
-          <legend><span class="step" aria-hidden="true">2</span>What’s the problem?</legend>
+          <legend><span class="step" aria-hidden="true">2</span>What's the problem?</legend>
           <p class="help">Pick the closest one.</p>
           <div class="cats" id="cats"></div>
           <p class="err" id="cErr" hidden><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span></span></p>
@@ -984,6 +1224,7 @@ a{color:inherit}
     <section class="card">
       <h2>How community reports work</h2>
       <p>Anyone can report a problem without an account. Reports are public and unverified. A report that says a restroom is closed or out of order shows it as “Reported closed” for <span class="ttl">48</span> hours, unless the official record already says it isn’t operating. Older reports stay visible on the restroom’s page for a week.</p>
+      <p>People can also add restrooms that aren’t in the city’s data. Those show as “not verified” until three other visitors say “Yes, it’s here”, and they disappear if most people say “Not here”.</p>
       <p>To keep things fair, one visitor can send one report per restroom per hour, and answer “Still true” or “Not true” once per report.</p>
     </section>
     <section class="card">
@@ -993,11 +1234,80 @@ a{color:inherit}
   </div>
 </section>
 
+<!-- ===================== VIEW: ADD A RESTROOM (#/add) ===================== -->
+<section class="view" id="view-add" aria-label="Add a restroom" hidden>
+  <div class="wrap">
+    <a class="back" href="#/map"><svg class="ic" aria-hidden="true"><use href="#i-back"/></svg>Back to the map</a>
+
+    <section class="rhero" aria-labelledby="atitle">
+      <h1 id="atitle"><span>Add a restroom</span></h1>
+      <p class="sub">Know a public restroom that isn’t on the map? Add it in a minute. Other people confirm it before it counts. No account needed.</p>
+    </section>
+
+    <form id="aForm" novalidate>
+      <div id="aBanner" tabindex="-1" hidden class="err"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span></span></div>
+
+      <section class="card">
+        <fieldset>
+          <legend><span class="step" aria-hidden="true">1</span>Where is it?</legend>
+          <p class="help" id="mapHelp">Tap the map to drop a pin on the door. Zoom in for the best spot. Green dots are restrooms already on the map.</p>
+          <div id="addMap" role="application" aria-label="Map. Tap to place a pin." aria-describedby="mapHelp"></div>
+          <div class="maprow">
+            <button class="btn ghost sm" type="button" id="locate"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg>Use my location</button>
+            <span class="coord" id="coord" aria-live="polite">No pin yet.</span>
+          </div>
+          <div class="dupes" id="dupes" hidden>
+            <p>A restroom is already on the map nearby:</p>
+            <ul id="dupeList"></ul>
+            <label><input type="checkbox" id="diff"> No, this is a different restroom</label>
+          </div>
+          <p class="err" id="wErr" hidden><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span></span></p>
+        </fieldset>
+      </section>
+
+      <section class="card">
+        <fieldset>
+          <legend><span class="step" aria-hidden="true">2</span>What is it called?</legend>
+          <label class="lbl" for="aName" style="margin-top:4px">Name</label>
+          <div class="field"><input id="aName" type="text" maxlength="80" autocomplete="off" placeholder="e.g. Corner Café restroom" aria-describedby="nErr"></div>
+          <label class="lbl" for="aType">Kind of place</label>
+          <select id="aType" aria-describedby="nErr"><option value="">Choose one</option><option>Park</option><option>Library</option><option>Shop or café</option><option>Transit station</option><option>Other</option></select>
+          <p class="err" id="nErr" hidden><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span></span></p>
+        </fieldset>
+      </section>
+
+      <section class="card">
+        <fieldset>
+          <legend><span class="step" aria-hidden="true">3</span>A few details <span class="opt">Optional</span></legend>
+          <div class="two">
+            <div><label class="lbl" for="aHours" style="margin-top:4px">Hours, if you know them</label>
+              <div class="field"><input id="aHours" type="text" maxlength="80" placeholder="e.g. 8am to 6pm"></div></div>
+            <div><label class="lbl" for="aAcc" style="margin-top:4px">Wheelchair accessible?</label>
+              <select id="aAcc"><option value="">Not sure</option><option>Yes</option><option>No</option></select></div>
+          </div>
+          <label class="lbl" for="aNote">Anything that helps someone find it</label>
+          <textarea id="aNote" maxlength="280" placeholder="e.g. Ask at the counter. Key is on a green tag." aria-describedby="aCount"></textarea>
+          <div class="count" id="aCount"><span>Public. Please leave out names and personal details.</span><span id="aNum">0 / 280</span></div>
+        </fieldset>
+      </section>
+
+      <div class="submit">
+        <button class="btn" type="submit" id="aGo"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg><span>Add restroom</span></button>
+        <a class="btn ghost" href="#/map">Cancel</a>
+      </div>
+      <p class="fine">It shows on the map as “not verified” until <span class="vneed">3</span> other people confirm it’s there. We don’t collect your name.</p>
+    </form>
+
+    <section id="aDone" class="state" hidden tabindex="-1" aria-live="polite"></section>
+  </div>
+</section>
+
 </main>
 
 <!-- ===================== APP SHELL: mobile tabs ===================== -->
 <nav class="shell-tabs" aria-label="Main (mobile)">
   <a href="#/map" data-nav="map"><svg class="ic"><use href="#i-pin"/></svg>Find</a>
+  <a href="#/add" data-nav="add"><svg class="ic"><use href="#i-plus"/></svg>Add</a>
   <a href="#/dashboard" data-nav="dashboard"><svg class="ic"><use href="#i-chart"/></svg>Dashboard</a>
   <a href="#/about" data-nav="about"><svg class="ic"><use href="#i-info"/></svg>About</a>
 </nav>
@@ -1183,9 +1493,12 @@ const STATUS_KEYS=[
 const pinKey=k=>`<span class="pinkey s-${k}">${doorSVG(k,false)}</span>`;
 const badge=st=>`<span class="badge s-${st.key}"><svg class="ic" aria-hidden="true"><use href="#i-${ICON[st.key]}"/></svg>${esc(st.label)}</span>`;
 const detailHref=id=>'#/restroom/'+encodeURIComponent(id);
+/* Walking directions in Google Maps, from wherever the visitor is. */
+const gmapsHref=r=>`https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}&travelmode=walking`;
 const reportHref=id=>'#/report'+(id?'?restroom='+encodeURIComponent(id):'');
 const plural=(n,w)=>n+' '+w+(n===1?'':'s');
 const ttlHours=()=>Store.meta.report_ttl_hours||48;
+const verifyNeed=()=>Store.meta.verify_votes||3;
 const tsOf=iso=>{const t=Date.parse(iso);return isNaN(t)?Date.now():t;};
 
 /* ---------------- API layer: the only place that talks to the backend ---------------- */
@@ -1227,7 +1540,9 @@ const Store={
     this.reports=this.reports.filter(r=>r.restroom_id!==id).concat(list.filter(r=>r.active));
     this.version++;
   },
-  addReport(rep){this.reports.unshift(rep);this.version++;}
+  addReport(rep){this.reports.unshift(rep);this.version++;},
+  addRestroom(r){this.all.push(r);this.version++;},
+  updateRestroom(id,patch){const r=this.byId(id);if(r){Object.assign(r,patch);this.version++;}}
 };
 
 /* official status + active community reports -> one status the UI can show */
@@ -1235,6 +1550,7 @@ function activeReports(id,list){
   return (list||Store.reports).filter(r=>r.restroom_id===id&&r.active).sort((a,b)=>b.created_at-a.created_at);
 }
 function deriveStatus(r,list){
+  if(r.community&&!r.verified) return {key:'unknown',label:'Not verified yet'};
   const off=(r.status||'').toLowerCase();
   if(off.includes('construction')) return {key:'down',label:'Closed for construction'};
   if(off.includes('not operational')) return {key:'down',label:'Not operational'};
@@ -1313,7 +1629,7 @@ const MapView=(function(){
   function renderAll(){renderHead();renderCards();renderMarkers();renderFilterUI();$('#originHint').textContent=S.originNote||'';$('#mapwrap').dataset.ui=S.ui;}
   function renderHead(){
     const n=S.filtered.length;
-    $('#count').textContent=S.ui==='loading'?'Loading…':S.ui==='error'?'Couldn’t load':S.ui==='empty'?'No restrooms found':`${n.toLocaleString()} restroom${n===1?'':'s'}`;
+    $('#count').textContent=S.ui==='loading'?'Loading…':S.ui==='error'?'Couldn\'t load':S.ui==='empty'?'No restrooms found':`${n.toLocaleString()} restroom${n===1?'':'s'}`;
     const synced=Store.meta.official_synced_at;
     $('#fresh').textContent=(S.ui==='ready'||S.ui==='empty')
       ?`Distances from ${S.origin.label}\n`+(synced?`Official NYC data as of ${new Date(synced).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · `:'')+`reports count for ${ttlHours()} hr`:'';
@@ -1327,6 +1643,8 @@ const MapView=(function(){
     else out.push(['muted','q','Accessibility unknown']);
     if(/^yes/i.test(r.changing_stations||'')) out.push(['','change','Changing station',r.changing_stations]);
     if(/^yes/i.test(r.menstrual_friendly||'')) out.push(['','drop','Menstrual products']);
+    if(r.community){const left=Math.max(0,verifyNeed()-(r.here_count||0));
+      out.push(['muted','users',r.verified?'Added by the community':`Needs ${left} more confirmation${left===1?'':'s'}`]);}
     return out.map(([c,i,t,title])=>`<li class="${c}"${title&&title.length>3?` title="${esc(title)}"`:''}><svg class="ic" aria-hidden="true"><use href="#i-${i}"/></svg>${t}</li>`).join('');
   }
   function communityLine(r){
@@ -1339,7 +1657,7 @@ const MapView=(function(){
     if(S.ui==='loading'){ul.innerHTML='<li class="skel"></li><li class="skel"></li><li class="skel"></li><li class="skel"></li>';return;}
     if(S.ui==='error'){
       ul.innerHTML=`<li class="state"><div class="cloud err" aria-hidden="true"></div>
-        <h3>We couldn’t reach the server</h3>
+        <h3>We couldn't reach the server</h3>
         <p>The restroom data isn’t answering, and we won’t show you old information. Give it a moment, then try again.</p>
         <button class="btn" type="button" data-act="retry-map">Try again</button>
         <p style="font-size:12px;opacity:.8">${esc(S.errorMsg)}</p></li>`;return;}
@@ -1347,18 +1665,22 @@ const MapView=(function(){
       ul.innerHTML=`<li class="state"><div class="cloud" aria-hidden="true"></div>
         <h3>Not a stall in sight</h3>
         <p>Nothing matches. Try a borough, a park name, or turn off a filter or two.</p>
-        <button class="btn" type="button" data-act="clear">Clear search and filters</button></li>`;return;}
+        <button class="btn" type="button" data-act="clear">Clear search and filters</button>
+        <a class="btn ghost" href="#/add">Add a restroom</a></li>`;return;}
     const shown=S.filtered.slice(0,S.limit),left=S.filtered.length-shown.length;
     ul.innerHTML=shown.map(({r,st,dist},i)=>{
       const sel=S.selectedId===r.id,h=hoursLine(r);
-      return `<li class="card${sel?' is-selected':''}" data-id="${esc(r.id)}" style="--i:${Math.min(i,10)}">
+      return `<li class="card${sel?' is-selected':''}${r.community?' is-community':''}" data-id="${esc(r.id)}" style="--i:${Math.min(i,10)}">
         <div class="card-top">${badge(st)}<span class="dist">${fmtDist(dist)}</span></div>
         <h3 class="card-name"><button type="button" class="card-pick" data-pick="${esc(r.id)}" aria-current="${sel}">${esc(r.facility_name)}</button></h3>
         <p class="card-meta">${esc(r.location_type||'Type unknown')} · ${esc(r.operator||'Operator unknown')} · ${esc(r.borough||'Borough unknown')}</p>
         <p class="card-hours" title="${esc(h.title)}"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>${esc(h.text)}${r.open==='Seasonal'?' · Seasonal':''}</p>
         <ul class="amen" aria-label="Features">${amenities(r)}</ul>
         ${communityLine(r)}
-        <a class="card-link" href="${detailHref(r.id)}">Details<span aria-hidden="true">→</span><span class="sr"> for ${esc(r.facility_name)}</span></a>
+        <div class="card-actions">
+          <a class="card-maps" href="${gmapsHref(r)}" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-nav"/></svg>Google Maps<span class="sr"> directions to ${esc(r.facility_name)} (opens in a new tab)</span></a>
+          <a class="card-link" href="${detailHref(r.id)}">Details<span aria-hidden="true">→</span><span class="sr"> for ${esc(r.facility_name)}</span></a>
+        </div>
       </li>`;}).join('')+(left>0?`<li class="more-row"><button class="btn alt" type="button" data-act="more">Show ${Math.min(PAGE,left)} more <span class="sr">of ${left.toLocaleString()} remaining</span></button></li>`:'');
   }
   function renderFilterUI(){
@@ -1393,7 +1715,7 @@ const MapView=(function(){
     return `${badge(st)}<h4>${esc(r.facility_name)}</h4>
       <p>${esc(r.location_type||'')} · ${fmtDist(dist)}</p>
       <p>${esc(hoursLine(r).text)}</p>
-      <p><a href="${detailHref(r.id)}">View details →</a></p>`;
+      <p><a href="${detailHref(r.id)}">View details →</a> · <a href="${gmapsHref(r)}" target="_blank" rel="noopener">Google Maps ↗</a></p>`;
   }
   function renderMarkers(){
     if(!MAP) return;
@@ -1527,6 +1849,7 @@ const DetailView=(function(){
       if(d.meta) Store.meta=Object.assign({},Store.meta,d.meta);
       S.rec=d.restroom;S.reports=(d.restroom.reports||[]).map(normReport);
       Store.setReports(id,S.reports);
+      if(S.rec.community) Store.updateRestroom(id,{here_count:S.rec.here_count,not_here_count:S.rec.not_here_count,verified:S.rec.verified});
       S.ui='ok';
     }catch(e){
       if(req!==S.req) return;
@@ -1557,6 +1880,8 @@ const DetailView=(function(){
       case 'open': return `Posted hours say it is open. ${h}.`;
       case 'closed': return `It is outside the posted hours right now. ${h}.`;
       default:
+        if(r.community&&!r.verified)
+          return `A visitor added this restroom. It isn’t in NYC’s official data, so it shows as not verified until ${verifyNeed()} people say it’s there.`;
         if(parseHours(r.hours_of_operation)&&/open later|later seasonally/i.test(r.hours_of_operation))
           return `Today’s posted hours (${h.replace(/^Today /,'').replace(/ \(may open later\)$/,'')}) have passed, but the listing says it may open later in the season, so we can’t say whether it is open.`;
         return r.hours_of_operation
@@ -1576,7 +1901,7 @@ const DetailView=(function(){
     }
     if(S.ui==='error'){
       root.innerHTML=`<div class="state"><div class="cloud err" aria-hidden="true"></div>
-        <h2>We couldn’t reach the server</h2>
+        <h2>We couldn't reach the server</h2>
         <p>The restroom data isn’t answering, and we won’t show you old information. Give it a moment, then try again.</p>
         <div class="actions"><button class="btn" type="button" data-act="retry-detail">Try again</button></div>
         <p class="small">${esc(S.errorMsg)}</p></div>`;
@@ -1584,7 +1909,7 @@ const DetailView=(function(){
     }
     if(S.ui==='notfound'){
       root.innerHTML=`<div class="state"><div class="cloud" aria-hidden="true"></div>
-        <h2>That one isn’t on the map</h2>
+        <h2>That one isn't on the map</h2>
         <p>It may have been removed from the NYC record, or the link is out of date. IDs are made from the name and location, so they change if either does.</p>
         <div class="actions"><a class="btn" href="#/map">Back to the map</a></div>
         ${S.id?`<p class="small">Looked for: <span class="id">${esc(S.id)}</span></p>`:''}</div>`;
@@ -1628,8 +1953,10 @@ const DetailView=(function(){
         <section class="card" aria-labelledby="h-now">
           <h2 id="h-now">Right now</h2>
           <p class="lead"><strong>${esc(st.label)}.</strong> ${esc(whyStatus(r,st))}</p>
-          <p class="src"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>${st.key==='reported'?'Status combines the official record with unverified community reports.':'Status comes from the official record and its posted hours.'}</p>
+          <p class="src"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>${r.community?'This restroom was added by a visitor. Confirmations from other visitors decide whether it counts as verified.':st.key==='reported'?'Status combines the official record with unverified community reports.':'Status comes from the official record and its posted hours.'}</p>
         </section>
+
+        ${r.community?communityHTML(r):''}
 
         <section class="card" aria-labelledby="h-rep">
           <h2 id="h-rep">What people are reporting<small>last ${ttl} hours</small></h2>
@@ -1675,12 +2002,41 @@ const DetailView=(function(){
         </section>
         <section class="card">
           <h2>About this record</h2>
-          <p class="small">Official NYC Open Data record, copied to our server ${esc(synced)}.</p>
+          ${r.community?`<p class="small">Added by a visitor on ${esc(r.added_at?new Date(r.added_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'an unknown date')}. Not part of NYC’s official data. The borough is estimated from the nearest official restroom.</p>`
+          :`<p class="small">Official NYC Open Data record, copied to our server ${esc(synced)}.</p>`}
           <p class="small muted">Page ID: <span class="id">${esc(r.id)}</span><br>The dataset has no ID, so we make one from the name and location.</p>
           <p class="small"><a class="link" href="https://data.cityofnewyork.us/d/i7jb-7jku" target="_blank" rel="noopener">Open the full dataset on NYC Open Data</a></p>
         </section>
       </aside>
     </div>`;
+  }
+  function communityHTML(r){
+    const need=verifyNeed(),here=r.here_count||0,gone=r.not_here_count||0,voted=answered.get('r:'+r.id);
+    return `<section class="card cbox" aria-labelledby="h-comm">
+      <h2 id="h-comm">Added by the community</h2>
+      <p>${r.verified?`Verified: ${here===1?'1 person has':here+' people have'} confirmed it’s here.`
+        :`Someone added this restroom. Can you see it? It’s verified once ${need} people say it’s here.`}</p>
+      ${r.verified?'':`<div class="meter" role="img" aria-label="${Math.min(here,need)} of ${need} confirmations"><i style="width:${Math.min(100,100*here/need)}%"></i></div>`}
+      <div class="votes"><span class="count">${here} said it’s here${gone?`, ${gone} said not here`:''}</span>
+        ${voted==='own'?'<span class="count"><strong>You added this restroom</strong>, so other visitors confirm it.</span>':`<button class="btn sm" type="button" data-act="here" data-here="1"${voted?' disabled':''}><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>${voted==='yes'?'You said it’s here':'Yes, it’s here'}</button>
+        <button class="btn ghost sm" type="button" data-act="here" data-here="0"${voted?' disabled':''}><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>${voted==='no'?'You said not here':'Not here'}</button>`}</div>
+    </section>`;
+  }
+  async function voteHere(btn){
+    const r=S.rec,here=btn.dataset.here==='1',key='r:'+r.id;
+    if(answered.has(key)) return;
+    $$('#view-detail [data-act="here"]').forEach(b=>{b.disabled=true;});
+    try{
+      const res=await api('/restrooms/'+encodeURIComponent(r.id)+'/votes',{here});
+      const patch={here_count:res.here_count,not_here_count:res.not_here_count,verified:res.verified};
+      Object.assign(r,patch);Store.updateRestroom(r.id,patch);
+      if(res.removed){Store.all=Store.all.filter(x=>x.id!==r.id);Store.version++;}
+      answered.set(key,here?'yes':'no');render();
+      toast(res.verified&&here?'Thanks! This restroom is now verified.':'Thanks, your answer was added.');
+    }catch(e){
+      if(e.status===409||e.status===403){answered.set(key,e.status===403?'own':(here?'yes':'no'));render();toast(e.message);}
+      else{$$('#view-detail [data-act="here"]').forEach(b=>{b.disabled=false;});toast('Couldn’t send that: '+e.message);}
+    }
   }
   function reportHTML(rep){
     const voted=answered.get(rep.id);
@@ -1727,8 +2083,9 @@ const DetailView=(function(){
     if(a==='retry-detail') open(S.id);
     else if(a==='copy') copyLink();
     else if(a==='vote') vote(b);
+    else if(a==='here') voteHere(b);
   });
-  return {enter(id){$('#view-detail').scrollTop=0;open(id);}};
+  return {enter(id){$('#view-detail').scrollTop=0;open(id);},markOwn(id){answered.set('r:'+id,'own');}};
 })();
 
 /* =====================================================================
@@ -2055,7 +2412,8 @@ const DashView=(function(){
       ['wheel','Fully accessible',T.fully_accessible,percent(T.fully_accessible,T.restrooms)+' of restrooms'],
       ['change','Changing stations',T.with_changing_stations,percent(T.with_changing_stations,T.restrooms)+' of restrooms'],
       ['drop','Menstrual products',T.menstrual_friendly,percent(T.menstrual_friendly,T.restrooms)+' of restrooms'],
-      ['users','Community reports',T.reports,T.active_reports.toLocaleString()+' in the last '+ttlHours()+' hours']];
+      ['users','Community reports',T.reports,T.active_reports.toLocaleString()+' in the last '+ttlHours()+' hours'],
+      ['plus','Added by visitors',T.community_added||0,(T.community_verified||0).toLocaleString()+' verified · not in the charts below']];
     $('#dashTiles').innerHTML=tiles.map(([i,l,v,s])=>`<div class="tile">${tileIcon(i)}<div class="tile-label">${esc(l)}</div><div class="tile-value">${v.toLocaleString()}</div><div class="tile-sub">${esc(s)}</div></div>`).join('');
 
     const off=$('#chartsOfficial');off.replaceChildren();
@@ -2122,6 +2480,33 @@ const DashView=(function(){
     st.data=data;
     status.textContent=chosen.length?'Filtered to '+chosen.join(' · '):'Showing all restrooms.';
     render(data);
+    loadRecent(req);
+  }
+  /* Recent reports: every report, newest first, plus a CSV download (not affected by the filters). */
+  async function loadRecent(req){
+    const card=el('div',{class:'chart-card wide',id:'recentCard'},
+      el('div',{class:'recent-head'},
+        el('div',null,el('h3',{text:'Recent reports'}),el('p',{class:'chart-sub',text:'Every report, newest first. Not affected by the filters above.'})),
+        el('a',{class:'btn ghost',href:API_BASE+'/reports.csv',download:'reports.csv',text:'Download CSV'})),
+      el('p',{class:'empty',text:'Loading…'}));
+    $('#chartsCommunity').append(card);
+    let d;
+    try{d=await api('/reports/recent?limit=50');}
+    catch(e){if(req===st.req) card.lastChild.textContent='Couldn’t load reports: '+e.message;return;}
+    if(req!==st.req) return;
+    if(!d.reports.length){card.lastChild.textContent='No reports yet. Send one from any restroom’s page.';return;}
+    const body=el('tbody');
+    d.reports.forEach(r=>body.append(el('tr',null,
+      el('td',{text:new Date(r.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}),
+      el('td',null,el('a',{class:'link',href:detailHref(r.restroom_id),text:r.facility_name||'Unnamed restroom'})),
+      el('td',{text:catLabel(r.category)}),
+      el('td',{class:'note-cell',text:r.note||'—'}),
+      el('td',{class:'num',text:r.agree_count+' / '+r.disagree_count}),
+      el('td',{text:r.active?'Active':'Expired'}))));
+    card.lastChild.replaceWith(...[el('div',{class:'table-wrap'},el('table',{class:'data'},
+      el('thead',null,el('tr',null,el('th',{text:'Received'}),el('th',{text:'Restroom'}),el('th',{text:'Problem'}),
+        el('th',{text:'Note'}),el('th',{class:'num',text:'Still true / Not true'}),el('th',{text:'Status'}))),body)),
+      d.total>d.reports.length?el('p',{class:'chart-sub',style:'margin-top:8px',text:'Showing the newest '+d.reports.length+' of '+d.total.toLocaleString()+'. The CSV has all of them.'}):null].filter(Boolean));
   }
   $('#dashClear').addEventListener('click',()=>{FILTERS.forEach(([k])=>{const s=$('#dash-'+k);if(s)s.value='';});load();});
   $('#view-dash').addEventListener('scroll',hideTip);
@@ -2133,6 +2518,105 @@ const DashView=(function(){
       load();
     },
     leave:hideTip
+  };
+})();
+
+/* =====================================================================
+   VIEW: ADD A RESTROOM (POST /restrooms; others confirm it with POST /restrooms/:id/votes)
+   ===================================================================== */
+const AddView=(function(){
+  const MAXNOTE=280;
+  let MAP=null,PIN=null,DOTS=null,pos=null,dupes=[],dotsVersion=-1;
+  const pinIcon=()=>L.divIcon({className:'',html:`<div class="pin s-unknown">${doorSVG('unknown',true)}</div>`,iconSize:[32,40],iconAnchor:[16,40]});
+
+  function initMap(){
+    if(MAP) return;
+    if(typeof L==='undefined'){$('#addMap').innerHTML='<p class="coord" style="padding:14px">The map library didn’t load, so the map is hidden. Check your connection and reload.</p>';return;}
+    MAP=L.map('addMap',{preferCanvas:true,scrollWheelZoom:false}).setView([40.7306,-73.9866],12);
+    addTiles(MAP);
+    DOTS=L.layerGroup().addTo(MAP);
+    MAP.on('click',e=>setPin(e.latlng.lat,e.latlng.lng));
+  }
+  function drawExisting(){
+    if(!MAP||dotsVersion===Store.version) return;
+    dotsVersion=Store.version;DOTS.clearLayers();
+    Store.all.forEach(r=>L.circleMarker([r.latitude,r.longitude],{radius:4,weight:1.5,color:'#fff',fillColor:r.community?'#2F6F8A':'#236B35',fillOpacity:.9,interactive:false}).addTo(DOTS));
+  }
+  function setPin(lat,lng){
+    pos={lat,lng};
+    if(PIN) PIN.setLatLng([lat,lng]); else if(MAP) PIN=L.marker([lat,lng],{icon:pinIcon(),keyboard:false,alt:'New restroom pin'}).addTo(MAP);
+    $('#coord').textContent='Pin placed: '+lat.toFixed(5)+', '+lng.toFixed(5);
+    clearErr('w');
+    dupes=Store.all.map(r=>({r,d:haversine({lat,lng},r)})).filter(x=>x.d<=0.04).sort((a,b)=>a.d-b.d).slice(0,3);
+    const box=$('#dupes');box.hidden=!dupes.length;$('#diff').checked=false;
+    $('#dupeList').innerHTML=dupes.map(x=>`<li><strong>${esc(x.r.facility_name)}</strong>, about ${Math.max(5,Math.round(x.d*1609.34/5)*5)} m away · <a href="${detailHref(x.r.id)}">View</a></li>`).join('');
+  }
+  $('#locate').addEventListener('click',()=>{
+    if(!navigator.geolocation){toast('Your browser can’t share your location. Tap the map instead.');return;}
+    navigator.geolocation.getCurrentPosition(p=>{setPin(p.coords.latitude,p.coords.longitude);if(MAP) MAP.setView([p.coords.latitude,p.coords.longitude],18);},
+      ()=>toast('Couldn’t get your location. Tap the map instead.'),{enableHighAccuracy:true,timeout:8000});
+  });
+  function setErr(k,msg){const e=$('#'+k+'Err');e.querySelector('span').textContent=msg;e.hidden=false;}
+  function clearErr(k){const e=$('#'+k+'Err');if(e) e.hidden=true;}
+  function banner(msg){const b=$('#aBanner');b.querySelector('span').textContent=msg;b.hidden=false;return b;}
+  function validate(){
+    let first=null;const bad=(k,msg,el)=>{setErr(k,msg);first=first||el;};
+    ['w','n'].forEach(clearErr);
+    if(!pos) bad('w','Tap the map to place a pin first.',$('#addMap'));
+    else if(dupes.length&&!$('#diff').checked) bad('w','Check the restroom nearby, or tick “this is a different restroom”.',$('#diff'));
+    const name=$('#aName').value.trim();
+    if(name.length<2) bad('n','Add a name so people can recognise it.',$('#aName'));
+    else if(!$('#aType').value) bad('n','Choose the kind of place.',$('#aType'));
+    if(first){banner('Please fix the highlighted items, then try again.');first.scrollIntoView({block:'center'});if(first.focus) first.focus({preventScroll:true});return false;}
+    $('#aBanner').hidden=true;return true;
+  }
+  $('#aNote').addEventListener('input',e=>{$('#aNum').textContent=e.target.value.length+' / '+MAXNOTE;});
+  $('#aForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!validate()) return;
+    const go=$('#aGo');go.disabled=true;go.querySelector('span').textContent='Adding…';
+    try{
+      const rec=await api('/restrooms',{facility_name:$('#aName').value.trim(),location_type:$('#aType').value,
+        latitude:pos.lat,longitude:pos.lng,hours_of_operation:$('#aHours').value.trim(),
+        accessibility:$('#aAcc').value==='Yes'?'Fully Accessible':$('#aAcc').value==='No'?'Not Accessible':'',
+        additional_notes:$('#aNote').value.trim().slice(0,MAXNOTE)});
+      Store.addRestroom(rec);DetailView.markOwn(rec.id);showDone(rec);
+    }catch(err){
+      banner((err.message||'Something went wrong.')+' Your answers are still here.').focus();
+    }finally{go.disabled=false;go.querySelector('span').textContent='Add restroom';}
+  });
+  function showDone(r){
+    $('#aForm').hidden=true;
+    const d=$('#aDone');d.hidden=false;
+    d.innerHTML=`<div class="cloud ok" aria-hidden="true"></div>
+      <h2>Thanks! It's on the map</h2>
+      <p>It shows as “not verified” until ${verifyNeed()} other people say it’s there. Here is what they will see:</p>
+      <div class="preview">
+        <p class="tag">Preview</p>
+        <span class="badge s-unknown"><svg class="ic" aria-hidden="true"><use href="#i-q"/></svg>Not verified yet</span>
+        <h3>${esc(r.facility_name)}</h3>
+        <p>${esc(r.location_type)} · ${esc(r.borough||'Borough unknown')}${r.hours_of_operation?' · '+esc(r.hours_of_operation):''}</p>
+        <div class="row"><span class="btn sm" aria-hidden="true">Yes, it’s here</span><span class="btn ghost sm" aria-hidden="true">Not here</span></div>
+      </div>
+      <div class="done-actions"><a class="btn" href="${detailHref(r.id)}">View it</a><a class="btn ghost" href="#/map">Back to the map</a><button class="btn ghost" type="button" id="again">Add another</button></div>`;
+    d.focus();$('#view-add').scrollTo(0,0);
+    $('#again').addEventListener('click',reset);
+  }
+  function reset(){
+    $('#aForm').reset();$('#aNum').textContent='0 / '+MAXNOTE;
+    if(PIN){PIN.remove();PIN=null;}pos=null;dupes=[];$('#dupes').hidden=true;$('#coord').textContent='No pin yet.';
+    ['w','n'].forEach(clearErr);$('#aBanner').hidden=true;
+    $('#aDone').hidden=true;$('#aForm').hidden=false;$('#view-add').scrollTo(0,0);
+  }
+  return {
+    enter(){
+      if(!$('#aDone').hidden) reset();
+      $$('.vneed').forEach(el=>{el.textContent=verifyNeed();});
+      initMap();
+      if(MAP) setTimeout(()=>MAP.invalidateSize(),0);
+      Store.load().then(()=>{$$('.vneed').forEach(el=>{el.textContent=verifyNeed();});drawExisting();},
+        e=>banner('Couldn’t reach the server, so we can’t check for restrooms nearby. '+e.message));
+    }
   };
 })();
 
@@ -2152,14 +2636,15 @@ const AboutView={
 /* =====================================================================
    ROUTER: #/map · #/restroom/:id · #/report?restroom=:id · #/dashboard · #/about
    ===================================================================== */
-const VIEWS={map:'#view-map',detail:'#view-detail',report:'#view-report',dashboard:'#view-dash',about:'#view-about'};
-const TITLES={map:'Find a restroom',detail:'Restroom detail',report:'Report a problem',dashboard:'Dashboard',about:'About the data'};
+const VIEWS={map:'#view-map',add:'#view-add',detail:'#view-detail',report:'#view-report',dashboard:'#view-dash',about:'#view-about'};
+const TITLES={map:'Find a restroom',add:'Add a restroom',detail:'Restroom detail',report:'Report a problem',dashboard:'Dashboard',about:'About the data'};
 let current=null;
 function route(){
   const h=location.hash||'#/map';
   let name='map',arg=null,m;
   if((m=h.match(/^#\/restroom\/([^/?#]+)/))){name='detail';arg=decodeURIComponent(m[1]);}
   else if(/^#\/report/.test(h)){name='report';m=h.match(/[?&]restroom=([^&#]+)/);arg=m?decodeURIComponent(m[1]):null;}
+  else if(/^#\/add/.test(h)) name='add';
   else if(/^#\/dashboard/.test(h)) name='dashboard';
   else if(/^#\/about/.test(h)) name='about';
   if(current==='dashboard'&&name!=='dashboard') DashView.leave();
@@ -2171,6 +2656,7 @@ function route(){
   if(name==='map') MapView.enter();
   else if(name==='detail') DetailView.enter(arg);
   else if(name==='report') ReportView.enter(arg);
+  else if(name==='add') AddView.enter();
   else if(name==='dashboard') DashView.enter();
   else AboutView.enter();
 }

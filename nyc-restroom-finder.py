@@ -11,12 +11,17 @@ On first start it downloads the NYC Open Data "Public Restrooms" dataset
 (i7jb-7jku) and the borough boundaries, and stores them in restrooms.db beside
 this file. Every later start reuses that database. To re-import, stop the server,
 delete restrooms.db and start it again (or run: python nyc-restroom-finder.py --sync).
+To save every community report to reports.csv: python nyc-restroom-finder.py --export
+Visitors can also add restrooms (POST /restrooms); those are stored in the same
+restrooms table with source = 'community' and need 3 "it's here" votes to be verified.
 
 Third-party packages: starlette, uvicorn. Everything else is standard library.
 Works on Python 3.9 and newer.
 """
 
 import contextlib
+import csv
+import io
 import hashlib
 import json
 import math
@@ -32,7 +37,7 @@ from starlette.applications import Starlette
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import FileResponse, JSONResponse, PlainTextResponse
+from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from starlette.routing import Mount, Route
 
 # --- Configuration -----------------------------------------------------------
@@ -94,6 +99,14 @@ REPORT_ACTIVE_HOURS = 48   # a report affects status and counts as "active" this
 REPORT_KEEP_DAYS = 7       # older than this, a report is returned with "stale": true
 RATE_LIMIT_MINUTES = 60    # one report per restroom per visitor in this window
 
+# Community-added restrooms ("Add a restroom" page)
+ADD_LOCATION_TYPES = ["Park", "Library", "Shop or café", "Transit station", "Other"]
+ADD_ACCESSIBILITY = ["", "Fully Accessible", "Not Accessible"]
+VERIFY_VOTES = 3          # "Yes, it's here" votes needed before a restroom counts as verified
+REMOVE_VOTES = 3          # "Not here" votes (and more than the yes votes) hide it
+ADDS_PER_DAY = 5          # restrooms one visitor can add in 24 hours
+COMMUNITY_OPERATOR = "Added by the community"
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS restrooms(
     id TEXT PRIMARY KEY, facility_name TEXT, location_type TEXT, operator TEXT,
@@ -114,10 +127,15 @@ CREATE TABLE IF NOT EXISTS confirmations(
     agrees INTEGER NOT NULL CHECK (agrees IN (0, 1)), created_at TEXT NOT NULL,
     client TEXT);
 
+CREATE TABLE IF NOT EXISTS restroom_votes(
+    id INTEGER PRIMARY KEY, restroom_id TEXT NOT NULL REFERENCES restrooms(id),
+    here INTEGER NOT NULL CHECK (here IN (0, 1)), created_at TEXT NOT NULL, client TEXT);
+
 CREATE TABLE IF NOT EXISTS metadata(key TEXT PRIMARY KEY, value TEXT);
 
 CREATE INDEX IF NOT EXISTS reports_restroom_idx ON reports(restroom_id);
 CREATE INDEX IF NOT EXISTS confirmations_report_idx ON confirmations(report_id);
+CREATE INDEX IF NOT EXISTS restroom_votes_idx ON restroom_votes(restroom_id);
 """
 
 
@@ -259,6 +277,12 @@ def find_borough(lon, lat, boroughs):
 def init_db():
     with contextlib.closing(connect()) as db:
         db.executescript(SCHEMA)
+        # Columns added for community restrooms; older databases get them here.
+        # source is NULL for NYC Open Data rows and 'community' for added ones.
+        have = {row[1] for row in db.execute("PRAGMA table_info(restrooms)")}
+        for column in ("source", "added_at", "added_by"):
+            if column not in have:
+                db.execute("ALTER TABLE restrooms ADD COLUMN %s TEXT" % column)
         db.commit()
 
 
@@ -367,6 +391,7 @@ def meta(db):
         "report_keep_days": REPORT_KEEP_DAYS,
         "closing_categories": sorted(CLOSING_CATEGORIES),
         "categories": REPORT_CATEGORIES,
+        "verify_votes": VERIFY_VOTES,
     }
 
 
@@ -427,6 +452,26 @@ def health(request):
                          "last_import": info["official_synced_at"]})
 
 
+RESTROOM_SELECT = (
+    "SELECT r.*,"
+    " (SELECT COUNT(*) FROM reports p WHERE p.restroom_id = r.id AND p.observed_at >= ?) AS active_report_count,"
+    " (SELECT COUNT(*) FROM restroom_votes v WHERE v.restroom_id = r.id AND v.here = 1) AS here_count,"
+    " (SELECT COUNT(*) FROM restroom_votes v WHERE v.restroom_id = r.id AND v.here = 0) AS not_here_count"
+    " FROM restrooms r")
+
+
+def restroom_dict(row):
+    """A restrooms row as JSON. Community rows also get verified / removed flags."""
+    restroom = dict(row)
+    restroom.pop("added_by", None)              # never send the adder's hash out
+    community = restroom.get("source") == "community"
+    restroom["community"] = community
+    here, gone = restroom.get("here_count") or 0, restroom.get("not_here_count") or 0
+    restroom["verified"] = (not community) or here >= VERIFY_VOTES
+    restroom["removed"] = community and gone >= REMOVE_VOTES and gone > here
+    return restroom
+
+
 def list_restrooms(request):
     """All restrooms (optionally filtered), plus every active report so the map can
     work out each restroom's status. With lat & lng: distance_m, nearest first."""
@@ -434,8 +479,7 @@ def list_restrooms(request):
     active_from, stale_from = active_cutoff(), stale_cutoff()
 
     where, values = filter_sql(params, RESTROOM_FILTERS)
-    sql = ("SELECT r.*, (SELECT COUNT(*) FROM reports p WHERE p.restroom_id = r.id"
-           " AND p.observed_at >= ?) AS active_report_count FROM restrooms r")
+    sql = RESTROOM_SELECT
     values.insert(0, active_from)
     if where:
         sql += " WHERE " + " AND ".join(where)
@@ -449,7 +493,8 @@ def list_restrooms(request):
                   parse_coordinate(params, "lng", -180, 180))
 
     with contextlib.closing(connect()) as db:
-        restrooms = [dict(row) for row in db.execute(sql, values)]
+        restrooms = [r for r in (restroom_dict(row) for row in db.execute(sql, values))
+                     if not r["removed"]]
         reports = [report_dict(row, active_from, stale_from) for row in db.execute(
             REPORT_SELECT + " WHERE p.observed_at >= ? ORDER BY p.observed_at DESC, p.id DESC",
             (active_from,))]
@@ -469,11 +514,11 @@ def list_restrooms(request):
 def get_restroom(request):
     active_from, stale_from = active_cutoff(), stale_cutoff()
     with contextlib.closing(connect()) as db:
-        row = db.execute("SELECT * FROM restrooms WHERE id = ?",
-                         (request.path_params["id"],)).fetchone()
+        row = db.execute(RESTROOM_SELECT + " WHERE r.id = ?",
+                         (active_from, request.path_params["id"])).fetchone()
         if row is None:
             raise HTTPException(404, "Restroom not found")
-        restroom = dict(row)
+        restroom = restroom_dict(row)
         restroom["reports"] = [report_dict(r, active_from, stale_from) for r in db.execute(
             REPORT_SELECT + " WHERE p.restroom_id = ? ORDER BY p.observed_at DESC, p.id DESC",
             (restroom["id"],))]
@@ -565,11 +610,150 @@ async def create_confirmation(request):
                          "disagree_count": disagree_count}, status_code=201)
 
 
+def nearest_borough(db, lat, lon):
+    """Borough of the closest official restroom (an estimate for community additions)."""
+    best, borough = float("inf"), None
+    for row in db.execute("SELECT latitude, longitude, borough FROM restrooms"
+                          " WHERE borough IS NOT NULL AND source IS NULL"):
+        d = (row[0] - lat) ** 2 + ((row[1] - lon) * 0.76) ** 2
+        if d < best:
+            best, borough = d, row[2]
+    return borough
+
+
+def text_field(body, name, max_length, required=False):
+    value = body.get(name)
+    if value is not None and not isinstance(value, str):
+        raise HTTPException(400, "%s must be text" % name)
+    value = clean(value)
+    if required and (value is None or len(value) < 2):
+        raise HTTPException(400, "%s is required" % name)
+    if value is not None and len(value) > max_length:
+        raise HTTPException(400, "%s must be %d characters or fewer" % (name, max_length))
+    return value
+
+
+async def add_restroom(request):
+    """A visitor adds a restroom that isn't in the NYC dataset. It shows as
+    "not verified" until VERIFY_VOTES other visitors say it's there."""
+    body = await read_json_object(request)
+    name = text_field(body, "facility_name", 80, required=True)
+    location_type = body.get("location_type")
+    if location_type not in ADD_LOCATION_TYPES:
+        raise HTTPException(400, "location_type must be one of: " + ", ".join(ADD_LOCATION_TYPES))
+    hours = text_field(body, "hours_of_operation", 80)
+    note = text_field(body, "additional_notes", NOTE_MAX_LENGTH)
+    accessibility = body.get("accessibility") or ""
+    if accessibility not in ADD_ACCESSIBILITY:
+        raise HTTPException(400, "accessibility must be Fully Accessible, Not Accessible or empty")
+    try:
+        lat, lon = float(body.get("latitude")), float(body.get("longitude"))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "latitude and longitude must be numbers")
+    if not (NYC_LAT_MIN <= lat <= NYC_LAT_MAX and NYC_LON_MIN <= lon <= NYC_LON_MAX):
+        raise HTTPException(400, "That pin is outside New York City.")
+
+    client, now = client_key(request), utc_now()
+    restroom_id = "c" + hashlib.sha1(("%s|%.6f|%.6f" % (name.lower(), lat, lon)).encode("utf-8")).hexdigest()[:11]
+    with contextlib.closing(connect()) as db:
+        if db.execute("SELECT 1 FROM restrooms WHERE id = ?", (restroom_id,)).fetchone():
+            raise HTTPException(409, "This restroom has already been added.")
+        added_today = db.execute(
+            "SELECT COUNT(*) FROM restrooms WHERE source = 'community' AND added_by = ? AND added_at >= ?",
+            (client, hours_ago(24))).fetchone()[0]
+        if added_today >= ADDS_PER_DAY:
+            raise HTTPException(429, "You've added %d restrooms today. Please try again tomorrow." % ADDS_PER_DAY)
+        db.execute(
+            "INSERT INTO restrooms (id, facility_name, location_type, operator, status, open,"
+            " hours_of_operation, accessibility, additional_notes, latitude, longitude, borough,"
+            " synced_at, source, added_at, added_by)"
+            " VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?, ?, NULL, 'community', ?, ?)",
+            (restroom_id, name, location_type, COMMUNITY_OPERATOR, hours, accessibility or None,
+             note, lat, lon, nearest_borough(db, lat, lon), now, client))
+        db.commit()
+        row = db.execute(RESTROOM_SELECT + " WHERE r.id = ?", (active_cutoff(), restroom_id)).fetchone()
+    return JSONResponse(restroom_dict(row), status_code=201)
+
+
+async def vote_restroom(request):
+    """"Yes, it's here" / "Not here" on a community-added restroom."""
+    restroom_id = request.path_params["id"]
+    body = await read_json_object(request)
+    here = body.get("here")
+    if not isinstance(here, bool):
+        raise HTTPException(400, "here must be true or false")
+    client = client_key(request)
+    with contextlib.closing(connect()) as db:
+        row = db.execute("SELECT source, added_by FROM restrooms WHERE id = ?", (restroom_id,)).fetchone()
+        if row is None:
+            raise HTTPException(404, "Restroom not found")
+        if row["source"] != "community":
+            raise HTTPException(400, "Only restrooms added by the community can be confirmed.")
+        if row["added_by"] == client:
+            raise HTTPException(403, "You added this restroom, so someone else needs to confirm it.")
+        if db.execute("SELECT 1 FROM restroom_votes WHERE restroom_id = ? AND client = ?",
+                      (restroom_id, client)).fetchone():
+            raise HTTPException(409, "You already answered for this restroom.")
+        db.execute("INSERT INTO restroom_votes(restroom_id, here, created_at, client) VALUES (?, ?, ?, ?)",
+                   (restroom_id, int(here), utc_now(), client))
+        db.commit()
+        restroom = restroom_dict(db.execute(RESTROOM_SELECT + " WHERE r.id = ?",
+                                            (active_cutoff(), restroom_id)).fetchone())
+    return JSONResponse({"restroom_id": restroom_id, "here": here,
+                         "here_count": restroom["here_count"], "not_here_count": restroom["not_here_count"],
+                         "verified": restroom["verified"], "removed": restroom["removed"]},
+                        status_code=201)
+
+
+RECENT_SELECT = (
+    "SELECT p.id, p.created_at, p.observed_at, p.restroom_id, r.facility_name, r.borough,"
+    " p.category, p.note,"
+    " (SELECT COUNT(*) FROM confirmations c WHERE c.report_id = p.id AND c.agrees = 1) AS agree_count,"
+    " (SELECT COUNT(*) FROM confirmations c WHERE c.report_id = p.id AND c.agrees = 0) AS disagree_count"
+    " FROM reports p JOIN restrooms r ON r.id = p.restroom_id"
+    " ORDER BY p.created_at DESC, p.id DESC")
+CSV_COLUMNS = ["id", "created_at", "observed_at", "restroom_id", "facility_name", "borough",
+               "category", "note", "agree_count", "disagree_count"]
+
+
+def recent_reports(request):
+    """Newest reports first, with the restroom's name. ?limit= (1-500, default 50)."""
+    try:
+        limit = max(1, min(500, int(request.query_params.get("limit", "50"))))
+    except ValueError:
+        raise HTTPException(400, "limit must be a whole number")
+    active_from = active_cutoff()
+    with contextlib.closing(connect()) as db:
+        total = db.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
+        rows = [dict(row) for row in db.execute(RECENT_SELECT + " LIMIT ?", (limit,))]
+    for row in rows:
+        row["active"] = row["observed_at"] >= active_from
+    return JSONResponse({"total": total, "reports": rows})
+
+
+def reports_csv_text():
+    """Every report as CSV text (opens in Excel, Google Sheets or any text editor)."""
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(CSV_COLUMNS)
+    with contextlib.closing(connect()) as db:
+        for row in db.execute(RECENT_SELECT):
+            writer.writerow([row[c] if row[c] is not None else "" for c in CSV_COLUMNS])
+    return out.getvalue()
+
+
+def reports_csv(request):
+    return Response(reports_csv_text(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="reports.csv"'})
+
+
 def stats(request):
     """Dashboard aggregates. Missing values are grouped as "Unknown"."""
     where, values = filter_sql(request.query_params, STATS_FILTERS)
     where_sql = (" WHERE " + " AND ".join(where)) if where else ""
-    from_restrooms = " FROM restrooms r" + where_sql
+    # Official charts count only NYC Open Data rows; community additions are counted separately.
+    from_restrooms = " FROM restrooms r WHERE " + " AND ".join(where + ["r.source IS NULL"])
+    from_community = " FROM restrooms r WHERE " + " AND ".join(where + ["r.source = 'community'"])
     from_reports = " FROM reports p JOIN restrooms r ON r.id = p.restroom_id" + where_sql
     active_from = active_cutoff()
 
@@ -588,6 +772,9 @@ def stats(request):
             " COALESCE(SUM(r.changing_stations LIKE 'Yes%'), 0),"
             " COALESCE(SUM(r.menstrual_friendly LIKE 'Yes%'), 0)" + from_restrooms,
             values).fetchone()
+        community = [restroom_dict(row) for row in db.execute(
+            RESTROOM_SELECT.replace(" FROM restrooms r", "") + from_community, [active_from] + values)]
+        community = [r for r in community if not r["removed"]]
         reports_row = db.execute(
             "SELECT COUNT(*), COALESCE(SUM(p.observed_at >= ?), 0)" + from_reports,
             [active_from] + values).fetchone()
@@ -628,6 +815,8 @@ def stats(request):
             "fully_accessible": totals_row[2], "with_changing_stations": totals_row[3],
             "menstrual_friendly": totals_row[4],
             "reports": reports_row[0], "active_reports": reports_row[1],
+            "community_added": len(community),
+            "community_verified": sum(r["verified"] for r in community),
         },
         "by_borough": by_borough,
         "by_location_type": by_location_type,
@@ -669,9 +858,13 @@ async def lifespan(app):
 api_routes = [
     Route("/health", health, methods=["GET"]),
     Route("/restrooms", list_restrooms, methods=["GET"]),
+    Route("/restrooms", add_restroom, methods=["POST"]),
     Route("/restrooms/{id}", get_restroom, methods=["GET"]),
+    Route("/restrooms/{id}/votes", vote_restroom, methods=["POST"]),
     Route("/stats", stats, methods=["GET"]),
     Route("/reports", create_report, methods=["POST"]),
+    Route("/reports/recent", recent_reports, methods=["GET"]),
+    Route("/reports.csv", reports_csv, methods=["GET"]),
     Route("/reports/{id:int}/confirmations", create_confirmation, methods=["POST"]),
 ]
 
@@ -692,7 +885,13 @@ app = Starlette(
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
-    if "--sync" in sys.argv:          # re-download the official data, keep reports
+    if "--export" in sys.argv:        # write every report to reports.csv beside this file
+        init_db()
+        path = os.path.join(HERE, "reports.csv")
+        with open(path, "w", encoding="utf-8-sig", newline="") as handle:
+            handle.write(reports_csv_text())
+        print("Saved %s" % path)
+    elif "--sync" in sys.argv:          # re-download the official data, keep reports
         init_db()
         import_restrooms()
     else:
