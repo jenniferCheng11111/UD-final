@@ -14,7 +14,7 @@ python3 -m venv .venv
 .venv/bin/python nyc-restroom-finder.py
 ```
 
-Then open **http://127.0.0.1:8011/**. The first start needs internet access to download the dataset and the borough boundaries, and it prints an import summary.
+Then open **http://127.0.0.1:8091/**. The first start needs internet access to download the dataset and the borough boundaries, and it prints an import summary.
 
 Opening `index.html` by double-clicking it also works while the backend runs. OpenStreetMap blocks `file://` pages, so in that case the map uses Esri gray tiles instead.
 

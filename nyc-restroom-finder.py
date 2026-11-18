@@ -4,7 +4,7 @@ One file, Starlette + uvicorn. Run it with:
 
     python nyc-restroom-finder.py
 
-Then open http://127.0.0.1:8011/ (the server also hands out index.html from this
+Then open http://127.0.0.1:8091/ (the server also hands out index.html from this
 folder, so the map tiles and the API work without any extra setup).
 
 On first start it downloads the NYC Open Data "Public Restrooms" dataset
@@ -44,7 +44,7 @@ from starlette.routing import Mount, Route
 # If you change ROUTE_PREFIX or PORT, change API_BASE at the top of index.html too.
 
 ROUTE_PREFIX = os.getenv("TEAM11_API_PREFIX", "/api/team11").rstrip("/")
-PORT = int(os.getenv("TEAM11_PORT", "8011"))
+PORT = int(os.getenv("TEAM11_PORT", "8091"))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.getenv("TEAM11_DB", os.path.join(HERE, "restrooms.db"))

@@ -1325,7 +1325,7 @@ body{background:#FFFFFF}
    server; anywhere else -> the same site the page came from.
    ===================================================================== */
 const LOCAL = location.protocol==='file:'||['localhost','127.0.0.1','[::1]'].includes(location.hostname);
-const API_BASE = LOCAL ? 'http://127.0.0.1:8011/api/team11' : location.origin+'/api/team11';
+const API_BASE = LOCAL ? 'http://127.0.0.1:8091/api/team11' : location.origin+'/api/team11';
 
 /* Report categories: the same keys the backend accepts. "closes" ones turn a restroom "Reported closed". */
 const CATEGORY = {
@@ -1564,7 +1564,7 @@ function deriveStatus(r,list){
 }
 
 /* Map tiles: OpenStreetMap. OSM refuses requests from pages opened as a file, so a
-   file:// page falls back to Esri Light Gray (use http://127.0.0.1:8011/ instead). */
+   file:// page falls back to Esri Light Gray (use http://127.0.0.1:8091/ instead). */
 function addTiles(map){
   if(location.protocol==='file:'){
     const ESRI='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
