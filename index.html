@@ -1040,6 +1040,22 @@ body{height:auto!important;min-height:100dvh;display:block!important}
 #view-report .recap{background:transparent;border:0;border-radius:0;padding:12px 0;border-top:1px solid var(--beige-line);border-bottom:1px solid var(--beige-line)}
 @media (max-width:860px){#view-report .card{padding:18px 2px}}
 
+/* ============ ADD A RESTROOM PAGE: same as the report page (no boxes, thin beige lines) ============ */
+#view-add{--beige-line:#E4D9BE;--beige-soft:0 1px 3px rgba(150,125,70,.16)}
+#view-add .card{background:transparent;border:0;border-radius:0;margin:0;padding:22px 2px;
+  border-bottom:1px solid var(--beige-line);box-shadow:0 1px 0 rgba(228,217,190,.45)}
+#view-add .submit{margin-top:22px}
+#view-add .field,#view-add select,#view-add textarea,#view-add .btn.ghost,#view-add #addMap{border:1px solid var(--beige-line);box-shadow:var(--beige-soft)}
+#view-add .btn.ghost{background:#fff}
+#view-add .btn.ghost:hover{border-color:#CDBE97}
+#view-add .field:focus-within,#view-add select:focus,#view-add textarea:focus{border-color:#B8A776}
+#view-add .dupes{border:1px solid var(--beige-line);box-shadow:var(--beige-soft)}
+/* thanks screen: no box; the preview keeps a light beige outline */
+#view-add .state{background:transparent;border:0;border-radius:0;padding:28px 2px 30px;border-bottom:1px solid var(--beige-line)}
+#view-add .preview{background:#fff;border:1px solid var(--beige-line);box-shadow:var(--beige-soft)}
+@media (max-width:860px){#view-add .card{padding:18px 2px}}
+#view-add .lbl{font-size:15px!important;font-weight:600!important;letter-spacing:0!important}
+
 </style>
 </head>
 <body>
