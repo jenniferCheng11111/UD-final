@@ -3,24 +3,24 @@
 | File | What it is |
 |---|---|
 | `index.html` | Frontend. One file with inline CSS, JS and the embedded Daydream heading font. Includes Find a restroom (map and list), Restroom detail, Report a problem, Add a restroom, Dashboard and About. Uses Leaflet 1.9.4 and OpenStreetMap tiles, and links out to Google Maps for directions. |
-| `nyc-restroom-finder.py` | Backend. One file, Starlette and uvicorn. Imports the NYC Open Data restroom dataset into SQLite (`restrooms.db`) and serves the JSON API. It also serves `index.html`. |
-| `requirements.txt` | The two Python packages the backend needs. |
+| `api.py` | Backend. One file, Starlette and uvicorn. Imports the NYC Open Data restroom dataset into SQLite (`restrooms.db`) and serves the JSON API. It also serves `index.html`. |
+| `requirements.txt` | The Python packages the backend needs (starlette, uvicorn, websockets). |
 
 ## Run it
 
 ```
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python nyc-restroom-finder.py
+.venv/bin/python api.py
 ```
 
 Then open **http://127.0.0.1:8091/**. The first start needs internet access to download the dataset and the borough boundaries, and it prints an import summary.
 
 Opening `index.html` by double-clicking it also works while the backend runs. OpenStreetMap blocks `file://` pages, so in that case the map uses Esri gray tiles instead.
 
-To save every report to `reports.csv` in this folder (opens in Excel, Google Sheets or a text editor), run `python nyc-restroom-finder.py --export`. The Dashboard also has a Recent reports table with a Download CSV button.
+To save every report to `reports.csv` in this folder (opens in Excel, Google Sheets or a text editor), run `.venv/bin/python api.py --export`. The Dashboard also has a Recent reports table with a Download CSV button.
 
-To refresh the official data later without losing reports, run `python nyc-restroom-finder.py --sync`.
+To refresh the official data later without losing reports, run `.venv/bin/python api.py --sync`.
 
 ## Pages (hash routes in index.html)
 
@@ -43,7 +43,7 @@ To refresh the official data later without losing reports, run `python nyc-restr
 
 Report categories: `closed`, `out_of_order`, `wrong_hours`, `supplies`, `cleanliness`, `access`, `safety`. The old names `dirty`, `no_supplies`, `accessibility_problem` and `unsafe` are still accepted.
 
-## Rules (constants at the top of the .py file)
+## Rules (constants at the top of `api.py`)
 
 - A report counts as **active for 48 hours** (`REPORT_ACTIVE_HOURS`). During that window a `closed` or `out_of_order` report makes the restroom show as "Reported closed". The detail page shows older reports up to 7 days (`REPORT_KEEP_DAYS`).
 - Each visitor can send one report per restroom per hour (HTTP 429) and one answer per report (HTTP 409). Visitors are recognised by a salted hash of their IP address, and no raw addresses are stored.
@@ -52,7 +52,7 @@ Report categories: `closed`, `out_of_order`, `wrong_hours`, `supplies`, `cleanli
 
 ## Course server
 
-Change `ROUTE_PREFIX` and `PORT` at the top of the .py file to what the professor assigns. If the prefix changes, also update `API_BASE` at the top of the script in `index.html`. When the page is not on localhost, it calls the API on its own site.
+Change `API_PREFIX` and `PORT` at the top of `api.py` to what the professor assigns. If the prefix changes, also update `API_BASE` at the top of the script in `index.html`. When the page is not on localhost, it calls the API on its own site.
 
 ## Fonts
 
