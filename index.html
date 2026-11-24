@@ -1056,6 +1056,28 @@ body{height:auto!important;min-height:100dvh;display:block!important}
 @media (max-width:860px){#view-add .card{padding:18px 2px}}
 #view-add .lbl{font-size:15px!important;font-weight:600!important;letter-spacing:0!important}
 
+/* ============ LIVE UPDATES: header light, user-added badge, new-pin pulse ============ */
+.live{display:inline-flex;align-items:center;gap:6px;margin-right:12px;padding:5px 10px;border-radius:999px;
+  font-size:12.5px;font-weight:700;color:var(--ink-soft);background:#F4F3ED;border:1px solid #E4D9BE;white-space:nowrap}
+.live i{width:8px;height:8px;border-radius:50%;background:#9AA39C;flex:none}
+.live[data-state="live"]{color:var(--green-deep)}
+.live[data-state="live"] i{background:#2E9E4F;box-shadow:0 0 0 0 rgba(46,158,79,.6);animation:livedot 2s infinite}
+.live[data-state="poll"] i{background:var(--gold)}
+@keyframes livedot{0%{box-shadow:0 0 0 0 rgba(46,158,79,.55)}70%{box-shadow:0 0 0 7px rgba(46,158,79,0)}100%{box-shadow:0 0 0 0 rgba(46,158,79,0)}}
+@media (max-width:860px){.live{margin-right:8px;padding:4px 8px;font-size:11.5px}}
+/* "+" badge on pins added by visitors */
+#views .ubadge{position:absolute;top:-3px;right:-3px;width:15px;height:15px;border-radius:50%;background:var(--teal-deep);
+  color:#fff;font:800 12px/15px var(--font-body);text-align:center;border:1.5px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+#views .pinkey.userpin{position:relative}
+#views .pinkey .ubadge{width:11px;height:11px;font-size:9px;line-height:10px;top:-3px;right:-5px;border-width:1px}
+.zo .pin.userpin:not(.sel) .ubadge{display:none}
+.leaflet-popup-content p.ub{color:var(--teal-deep)}
+/* a pin that just arrived live pulses for a moment */
+#views .pin.fresh::after{content:"";position:absolute;left:50%;top:15px;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;
+  border:3px solid var(--teal);animation:livepulse 1.4s ease-out 5;pointer-events:none}
+@keyframes livepulse{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.live i,#views .pin.fresh::after{animation:none!important}}
+
 </style>
 </head>
 <body>
@@ -1097,6 +1119,7 @@ body{height:auto!important;min-height:100dvh;display:block!important}
     <a href="#/dashboard" data-nav="dashboard"><svg class="ic"><use href="#i-chart"/></svg>Dashboard</a>
     <a href="#/about" data-nav="about"><svg class="ic"><use href="#i-info"/></svg>About the data</a>
   </nav>
+  <span class="live" id="live" data-state="off" role="status" aria-live="polite"><i aria-hidden="true"></i><span class="txt">Connecting…</span></span>
   <a class="btn-report" href="#/report" data-nav="report"><svg class="ic"><use href="#i-flag"/></svg>Report</a>
 </header>
 
@@ -1301,6 +1324,7 @@ body{height:auto!important;min-height:100dvh;display:block!important}
       <h2>How community reports work</h2>
       <p>Anyone can report a problem without an account. Reports are public and unverified. A report that says a restroom is closed or out of order shows it as “Reported closed” for <span class="ttl">48</span> hours, unless the official record already says it isn’t operating. Older reports stay visible on the restroom’s page for a week.</p>
       <p>People can also add restrooms that aren’t in the city’s data. Those show as “not verified” until three other visitors say “Yes, it’s here”, and they disappear if most people say “Not here”.</p>
+      <p>The map is live: when anyone adds a restroom, it appears on everyone's map straight away, marked with a “+” badge as added by a visitor. New reports and confirmations show up live too. The “Live” light in the header shows the connection is on.</p>
       <p>To keep things fair, one visitor can send one report per restroom per hour, and answer “Still true” or “Not true” once per report.</p>
     </section>
     <section class="card">
@@ -1787,18 +1811,20 @@ const MapView=(function(){
     const zo=()=>$('#map').classList.toggle('zo',MAP.getZoom()<=12);
     MAP.on('zoomend',zo);zo();
   }
-  function pinIcon(key,sel,enterIdx){
+  function pinIcon(key,sel,enterIdx,cls){
     const enter=enterIdx>=0?` enter" style="--d:${Math.min(enterIdx,50)*14}ms`:'';
     return L.divIcon({className:'pin-wrap',iconSize:[32,40],iconAnchor:[16,40],popupAnchor:[0,-40],
-      html:`<div class="pin s-${key}${sel?' sel':''}${enter}">${doorSVG(key,true)}</div>`});
+      html:`<div class="pin s-${key}${sel?' sel':''}${cls||''}${enter}">${doorSVG(key,true)}${cls&&cls.includes('userpin')?'<span class="ubadge" aria-hidden="true">+</span>':''}</div>`});
   }
   function popupHTML(row){
     const {r,st,dist}=row;
     return `${badge(st)}<h4>${esc(r.facility_name)}</h4>
       <p>${esc(r.location_type||'')} · ${fmtDist(dist)}</p>
       <p>${esc(hoursLine(r).text)}</p>
+      ${r.community?`<p class="ub"><strong>Added by a visitor</strong>${r.verified?' · verified':' · not verified yet'}</p>`:''}
       <p><a href="${detailHref(r.id)}">View details →</a> · <a href="${gmapsHref(r)}" target="_blank" rel="noopener">Google Maps ↗</a></p>`;
   }
+  const pinCls=r=>(r.community?' userpin':'')+(Live.isFresh(r.id)?' fresh':'');
   function renderMarkers(){
     if(!MAP) return;
     LAYER.clearLayers();MARKERS={};
@@ -1806,7 +1832,7 @@ const MapView=(function(){
     const intro=!window.__pinsIntro;window.__pinsIntro=true;
     S.filtered.forEach((row,i)=>{
       const {r,st}=row;
-      const m=L.marker([r.latitude,r.longitude],{icon:pinIcon(st.key,r.id===S.selectedId,intro?i:-1),title:r.facility_name,alt:`${r.facility_name}, ${st.label}`,riseOnHover:true,
+      const m=L.marker([r.latitude,r.longitude],{icon:pinIcon(st.key,r.id===S.selectedId,intro?i:-1,pinCls(r)),title:r.facility_name,alt:`${r.facility_name}, ${st.label}`,riseOnHover:true,
         zIndexOffset:st.key==='reported'?500:0});
       m.bindPopup(()=>popupHTML(row),{maxWidth:260,autoPanPadding:[30,30]});
       m.on('click',()=>select(r.id,{fly:false,scroll:true,popup:false}));
@@ -1832,7 +1858,7 @@ const MapView=(function(){
     $$('#view-map .card-pick').forEach(b=>b.setAttribute('aria-current',String(b.dataset.pick===id)));
     Object.keys(MARKERS).forEach(k=>{
       const row=S.filtered.find(x=>x.r.id===k);
-      MARKERS[k].setIcon(pinIcon(row.st.key,k===id,-1));MARKERS[k].setZIndexOffset(k===id?1000:(row.st.key==='reported'?500:0));
+      MARKERS[k].setIcon(pinIcon(row.st.key,k===id,-1,pinCls(row.r)));MARKERS[k].setZIndexOffset(k===id?1000:(row.st.key==='reported'?500:0));
     });
     const m=MARKERS[id];
     if(m&&MAP){if(fly) MAP.flyTo(m.getLatLng(),Math.max(MAP.getZoom(),15),{duration:.6});if(popup) m.openPopup();}
@@ -1898,10 +1924,17 @@ const MapView=(function(){
       if(a==='more'){S.limit+=PAGE;renderCards();}
     }
   });
-  $('#legendList').innerHTML=STATUS_KEYS.map(([k,t])=>`<li>${pinKey(k)}${t}</li>`).join('');
+  $('#legendList').innerHTML=STATUS_KEYS.map(([k,t])=>`<li>${pinKey(k)}${t}</li>`).join('')
+    +`<li><span class="pinkey s-unknown userpin">${doorSVG('unknown',false)}<span class="ubadge" aria-hidden="true">+</span></span>Added by a visitor</li>`;
   if(isMobile()) $('#legend').removeAttribute('open');
 
   return {
+    /* called by Live when someone else changes something: redraw without moving the map */
+    refresh(){
+      if(!Store.all.length||S.ui==='loading'||S.ui==='error') return;
+      S.version=Store.version;
+      const keep=S.limit;applyFilters(false);S.limit=Math.max(S.limit,keep);if(S.limit>PAGE) renderCards();
+    },
     enter(){
       initMap();
       if(MAP) setTimeout(()=>MAP.invalidateSize(),0);
@@ -1922,9 +1955,10 @@ const DetailView=(function(){
   const DAYNAME=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const ACCESS={full:['Fully accessible',''],partial:['Partly accessible','muted'],limited:['Limited access','muted'],none:['Not accessible','warn'],unknown:['Not listed in the record','muted']};
 
-  async function open(id){
+  async function open(id,quiet){
     const req=++S.req;
-    S.id=id;S.ui='loading';render();
+    S.id=id;
+    if(!quiet){S.ui='loading';render();}
     try{
       const d=await api('/restrooms/'+encodeURIComponent(id));
       if(req!==S.req) return;
@@ -2167,7 +2201,9 @@ const DetailView=(function(){
     else if(a==='vote') vote(b);
     else if(a==='here') voteHere(b);
   });
-  return {enter(id){open(id);},markOwn(id){answered.set('r:'+id,'own');}};
+  return {enter(id){open(id);},markOwn(id){answered.set('r:'+id,'own');},
+    /* Live: someone changed this restroom, so reload it quietly if it is open */
+    reloadIf(id){if(!$('#view-detail').hidden&&S.id===id&&S.ui==='ok') open(id,true);}};
 })();
 
 /* =====================================================================
@@ -2322,7 +2358,7 @@ const ReportView=(function(){
     try{
       const saved=await api('/reports',{restroom_id:r.id,category:F.cat,note,seen_minutes_ago:+seen});
       const rep=normReport(saved);
-      if(rep.active) Store.addReport(rep);
+      if(rep.active&&!Store.reports.some(x=>x.id===rep.id)) Store.addReport(rep);
       showDone(r,before,deriveStatus(r),note,seen);
     }catch(err){
       const b=err.status===429
@@ -2657,12 +2693,14 @@ const AddView=(function(){
     e.preventDefault();
     if(!validate()) return;
     const go=$('#aGo');go.disabled=true;go.querySelector('span').textContent='Adding…';
+    Live.expectOwn($('#aName').value.trim());
     try{
       const rec=await api('/restrooms',{facility_name:$('#aName').value.trim(),location_type:$('#aType').value,
         latitude:pos.lat,longitude:pos.lng,hours_of_operation:$('#aHours').value.trim(),
         accessibility:$('#aAcc').value==='Yes'?'Fully Accessible':$('#aAcc').value==='No'?'Not Accessible':'',
         additional_notes:$('#aNote').value.trim().slice(0,MAXNOTE)});
-      Store.addRestroom(rec);DetailView.markOwn(rec.id);showDone(rec);
+      if(!Store.byId(rec.id)) Store.addRestroom(rec);
+      DetailView.markOwn(rec.id);showDone(rec);
     }catch(err){
       banner((err.message||'Something went wrong.')+' Your answers are still here.').focus();
     }finally{go.disabled=false;go.querySelector('span').textContent='Add restroom';}
@@ -2691,6 +2729,7 @@ const AddView=(function(){
     $('#aDone').hidden=true;$('#aForm').hidden=false;window.scrollTo(0,0);
   }
   return {
+    refresh(){drawExisting();},
     enter(){
       if(!$('#aDone').hidden) reset();
       $$('.vneed').forEach(el=>{el.textContent=verifyNeed();});
@@ -2714,6 +2753,86 @@ const AboutView={
     },e=>{$('#aboutSync').textContent='Couldn’t reach the server: '+e.message;});
   }
 };
+
+/* =====================================================================
+   LIVE UPDATES (WebSocket at API_BASE/ws). When anyone adds a restroom, sends a report
+   or confirms one, the server pushes it here and the page updates without a refresh.
+   If WebSockets aren't available, the page checks for changes every 20 seconds instead.
+   ===================================================================== */
+const Live=(function(){
+  const WS_URL=API_BASE.replace(/^http/,'ws')+'/ws';
+  const POLL_MS=20000,FRESH_MS=60000;
+  let ws=null,fails=0,pollTimer=null,pingTimer=null,retryTimer=null,online=0,ownName=null;
+  const fresh=new Map();                     // restroom id -> time it arrived live
+  function setState(state){
+    const b=$('#live');if(!b) return;
+    b.dataset.state=state;
+    const txt=state==='live'?('Live'+(online>1?' · '+online+' online':''))
+      :state==='poll'?'Auto-refresh':'Connecting…';
+    b.querySelector('.txt').textContent=txt;
+    b.title=state==='live'?'Live: new restrooms and reports appear here as soon as anyone adds them.'
+      :state==='poll'?'Live connection unavailable: checking for new restrooms every 20 seconds.':'Connecting to live updates…';
+  }
+  function refreshViews(){
+    if(!$('#view-map').hidden) MapView.refresh();
+    if(!$('#view-add').hidden) AddView.refresh();
+  }
+  function announce(r){
+    if(ownName&&r.facility_name===ownName){ownName=null;return;}   // your own addition
+    toast('New restroom added by a visitor: '+r.facility_name);
+  }
+  function handle(m){
+    switch(m.type){
+      case 'presence': online=m.online;setState('live');break;
+      case 'restroom_added':{
+        const r=m.restroom;
+        if(!Store.byId(r.id)){Store.addRestroom(r);fresh.set(r.id,Date.now());announce(r);refreshViews();}
+        break;}
+      case 'restroom_voted':{
+        const patch={here_count:m.here_count,not_here_count:m.not_here_count,verified:m.verified};
+        Store.updateRestroom(m.restroom_id,patch);
+        if(m.removed){Store.all=Store.all.filter(x=>x.id!==m.restroom_id);Store.version++;}
+        refreshViews();DetailView.reloadIf(m.restroom_id);break;}
+      case 'report_added':{
+        const rep=normReport(m.report);
+        if(rep.active&&!Store.reports.some(x=>x.id===rep.id)){Store.addReport(rep);refreshViews();}
+        DetailView.reloadIf(rep.restroom_id);break;}
+      case 'report_confirmed':{
+        const rep=Store.reports.find(x=>x.id===m.report_id);
+        if(rep){rep.confirms=m.agree_count;rep.disputes=m.disagree_count;Store.version++;refreshViews();}
+        DetailView.reloadIf(m.restroom_id);break;}
+    }
+  }
+  function connect(){
+    clearTimeout(retryTimer);
+    if(!('WebSocket' in window)) return startPolling();
+    try{ws=new WebSocket(WS_URL);}catch(e){return startPolling();}
+    ws.onopen=()=>{
+      fails=0;stopPolling();setState('live');
+      clearInterval(pingTimer);pingTimer=setInterval(()=>{try{ws.send('ping');}catch(_){}} ,25000);
+      if(Store.all.length) Store.load(true).then(refreshViews,()=>{});   // catch up on anything missed
+    };
+    ws.onmessage=e=>{let m;try{m=JSON.parse(e.data);}catch(_){return;}handle(m);};
+    ws.onclose=()=>{
+      clearInterval(pingTimer);fails++;
+      if(fails>=2) startPolling(); else setState('off');
+      retryTimer=setTimeout(connect,Math.min(30000,1500*2**fails));
+    };
+  }
+  async function poll(){
+    const before=new Set(Store.all.map(r=>r.id));
+    try{await Store.load(true);}catch(e){return;}
+    Store.all.filter(r=>!before.has(r.id)).forEach(r=>{fresh.set(r.id,Date.now());announce(r);});
+    refreshViews();
+  }
+  function startPolling(){setState('poll');if(!pollTimer) pollTimer=setInterval(poll,POLL_MS);}
+  function stopPolling(){clearInterval(pollTimer);pollTimer=null;}
+  return {
+    start(){setState('off');connect();},
+    isFresh(id){const t=fresh.get(id);return !!t&&Date.now()-t<FRESH_MS;},
+    expectOwn(name){ownName=name;}
+  };
+})();
 
 /* =====================================================================
    ROUTER: #/map · #/restroom/:id · #/report?restroom=:id · #/dashboard · #/about
@@ -2747,6 +2866,7 @@ function route(){
 }
 addEventListener('hashchange',route);
 route();
+Live.start();
 })();
 
 </script>

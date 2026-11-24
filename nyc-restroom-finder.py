@@ -15,7 +15,13 @@ To save every community report to reports.csv: python nyc-restroom-finder.py --e
 Visitors can also add restrooms (POST /restrooms); those are stored in the same
 restrooms table with source = 'community' and need 3 "it's here" votes to be verified.
 
-Third-party packages: starlette, uvicorn. Everything else is standard library.
+Live updates (WebSocket): every open page connects to /api/team11/ws. When anyone adds
+a restroom, sends a report or confirms one, the server pushes it to all connected pages
+straight away, so new user-added pins appear on everyone's map without a refresh.
+uvicorn needs the "websockets" package for this (pip install websockets); without it
+the page falls back to checking for changes every 20 seconds.
+
+Third-party packages: starlette, uvicorn, websockets. Everything else is standard library.
 Works on Python 3.9 and newer.
 """
 
@@ -38,7 +44,8 @@ from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response
-from starlette.routing import Mount, Route
+from starlette.routing import Mount, Route, WebSocketRoute
+from starlette.websockets import WebSocketDisconnect
 
 # --- Configuration -----------------------------------------------------------
 # If you change ROUTE_PREFIX or PORT, change API_BASE at the top of index.html too.
@@ -137,6 +144,38 @@ CREATE INDEX IF NOT EXISTS reports_restroom_idx ON reports(restroom_id);
 CREATE INDEX IF NOT EXISTS confirmations_report_idx ON confirmations(report_id);
 CREATE INDEX IF NOT EXISTS restroom_votes_idx ON restroom_votes(restroom_id);
 """
+
+
+# --- Live updates (WebSocket) -------------------------------------------------
+
+class LiveHub:
+    """Keeps every open page's WebSocket and pushes changes to all of them."""
+
+    def __init__(self):
+        self.clients = set()
+
+    async def join(self, websocket):
+        await websocket.accept()
+        self.clients.add(websocket)
+        await self.presence()
+
+    async def leave(self, websocket):
+        self.clients.discard(websocket)
+        await self.presence()
+
+    async def presence(self):
+        await self.broadcast({"type": "presence", "online": len(self.clients)})
+
+    async def broadcast(self, message):
+        """Send one JSON message to every connected page; drop pages that have gone."""
+        for websocket in list(self.clients):
+            try:
+                await websocket.send_json(message)
+            except Exception:
+                self.clients.discard(websocket)
+
+
+LIVE = LiveHub()
 
 
 # --- Helpers -----------------------------------------------------------------
@@ -449,7 +488,8 @@ def health(request):
                   for table in ("restrooms", "reports", "confirmations")}
         info = meta(db)
     return JSONResponse({"status": "ok", "counts": counts,
-                         "last_import": info["official_synced_at"]})
+                         "last_import": info["official_synced_at"],
+                         "live_clients": len(LIVE.clients)})
 
 
 RESTROOM_SELECT = (
@@ -581,6 +621,7 @@ async def create_report(request):
         db.commit()
         row = db.execute(REPORT_SELECT + " WHERE p.id = ?", (cursor.lastrowid,)).fetchone()
         report = report_dict(row, active_cutoff(), stale_cutoff())
+    await LIVE.broadcast({"type": "report_added", "report": report})
     return JSONResponse(report, status_code=201)
 
 
@@ -605,6 +646,11 @@ async def create_confirmation(request):
         agree_count, disagree_count = db.execute(
             "SELECT COALESCE(SUM(agrees = 1), 0), COALESCE(SUM(agrees = 0), 0)"
             " FROM confirmations WHERE report_id = ?", (report_id,)).fetchone()
+        restroom_id = db.execute("SELECT restroom_id FROM reports WHERE id = ?",
+                                 (report_id,)).fetchone()[0]
+    await LIVE.broadcast({"type": "report_confirmed", "report_id": report_id,
+                          "restroom_id": restroom_id, "agree_count": agree_count,
+                          "disagree_count": disagree_count})
     return JSONResponse({"id": cursor.lastrowid, "report_id": report_id, "agrees": agrees,
                          "created_at": created_at, "agree_count": agree_count,
                          "disagree_count": disagree_count}, status_code=201)
@@ -672,7 +718,9 @@ async def add_restroom(request):
              note, lat, lon, nearest_borough(db, lat, lon), now, client))
         db.commit()
         row = db.execute(RESTROOM_SELECT + " WHERE r.id = ?", (active_cutoff(), restroom_id)).fetchone()
-    return JSONResponse(restroom_dict(row), status_code=201)
+    restroom = restroom_dict(row)
+    await LIVE.broadcast({"type": "restroom_added", "restroom": restroom})
+    return JSONResponse(restroom, status_code=201)
 
 
 async def vote_restroom(request):
@@ -699,10 +747,11 @@ async def vote_restroom(request):
         db.commit()
         restroom = restroom_dict(db.execute(RESTROOM_SELECT + " WHERE r.id = ?",
                                             (active_cutoff(), restroom_id)).fetchone())
-    return JSONResponse({"restroom_id": restroom_id, "here": here,
-                         "here_count": restroom["here_count"], "not_here_count": restroom["not_here_count"],
-                         "verified": restroom["verified"], "removed": restroom["removed"]},
-                        status_code=201)
+    result = {"restroom_id": restroom_id, "here": here,
+              "here_count": restroom["here_count"], "not_here_count": restroom["not_here_count"],
+              "verified": restroom["verified"], "removed": restroom["removed"]}
+    await LIVE.broadcast(dict(result, type="restroom_voted"))
+    return JSONResponse(result, status_code=201)
 
 
 RECENT_SELECT = (
@@ -834,6 +883,19 @@ def stats(request):
     })
 
 
+async def live_socket(websocket):
+    """WebSocket at /api/team11/ws. The server only sends; a page may send "ping"."""
+    await LIVE.join(websocket)
+    try:
+        while True:
+            if await websocket.receive_text() == "ping":
+                await websocket.send_json({"type": "pong"})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await LIVE.leave(websocket)
+
+
 def homepage(request):
     """Hand out index.html from this folder, so one command runs the whole app."""
     if os.path.exists(INDEX_HTML):
@@ -866,6 +928,7 @@ api_routes = [
     Route("/reports/recent", recent_reports, methods=["GET"]),
     Route("/reports.csv", reports_csv, methods=["GET"]),
     Route("/reports/{id:int}/confirmations", create_confirmation, methods=["POST"]),
+    WebSocketRoute("/ws", live_socket),
 ]
 
 app = Starlette(
